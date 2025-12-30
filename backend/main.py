@@ -139,6 +139,31 @@ def startup_event():
         db.commit()
         print("Created default admin user: admin / admin123")
     db.close()
+    
+    # Keep Alive Mechanism
+    import threading
+    import time
+    import requests
+    
+    def keep_alive():
+        url = os.getenv("BACKEND_URL")
+        if url:
+            print(f"Starting keep-alive for {url}")
+            while True:
+                try:
+                    time.sleep(14 * 60) # 14 minutes
+                    print(f"Pinging {url} to keep alive...")
+                    requests.get(f"{url}/health")
+                except Exception as e:
+                    print(f"Keep-alive ping failed: {e}")
+        else:
+            print("No BACKEND_URL set, skipping keep-alive.")
+
+    threading.Thread(target=keep_alive, daemon=True).start()
+
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
 
 # User Management Endpoints
 @app.post("/users/", response_model=schemas.User)
