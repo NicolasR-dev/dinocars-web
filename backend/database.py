@@ -7,6 +7,9 @@ import os
 SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./dinocars.db")
 
 if SQLALCHEMY_DATABASE_URL:
+    # Handle case where user pastes the entire psql command
+    if SQLALCHEMY_DATABASE_URL.startswith("psql "):
+        SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace("psql ", "", 1)
     SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.strip().strip("'").strip('"')
 
 # Fix for Render/Heroku using postgres:// instead of postgresql://
