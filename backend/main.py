@@ -15,10 +15,7 @@ models.Base.metadata.create_all(bind=database.engine)
 app = FastAPI(title="DinoCars API")
 
 # CORS
-origins = [
-    "http://localhost:3000",
-    os.getenv("FRONTEND_URL", "http://localhost:3000"),
-]
+origins = ["*"]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins, # Next.js default port
