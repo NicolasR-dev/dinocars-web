@@ -26,8 +26,19 @@ export default function LoginPage() {
             // Decode token to get role (simple decode for redirection)
             // In a real app, use a proper auth context
             router.push('/dashboard');
-        } catch (err) {
-            setError('Credenciales incorrectas');
+        } catch (err: any) {
+            console.error(err);
+            if (err.response) {
+                if (err.response.status === 401) {
+                    setError('Credenciales incorrectas');
+                } else {
+                    setError(`Error del servidor: ${err.response.status}`);
+                }
+            } else if (err.request) {
+                setError('Error de conexión. Verifica que el backend esté funcionando.');
+            } else {
+                setError('Ocurrió un error inesperado');
+            }
         }
     };
 
