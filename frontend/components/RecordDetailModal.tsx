@@ -148,7 +148,7 @@ export default function RecordDetailModal({ record, isOpen, onClose, onUpdate, u
                             </div>
                             <div className="space-y-1">
                                 <label className="text-xs text-slate-500 uppercase">Estado</label>
-                                <div className={`inline-flex px-3 py-1 rounded-full text-sm font-bold ${formData.status === 'CUADRA' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'
+                                <div className={`inline-flex px-3 py-1 rounded-full text-sm font-bold ${formData.status === 'CUADRA' ? 'bg-emerald-500/20 text-emerald-400' : (formData.status === 'EXCEDENTE' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400')
                                     }`}>
                                     {formData.status}
                                 </div>
@@ -191,7 +191,7 @@ export default function RecordDetailModal({ record, isOpen, onClose, onUpdate, u
                         <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700">
                             <div className="flex justify-between items-center">
                                 <span className="text-slate-400">Diferencia Final</span>
-                                <span className={`text-xl font-bold ${formData.difference === 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                <span className={`text-xl font-bold ${formData.difference === 0 ? 'text-emerald-400' : (formData.difference > 0 ? 'text-yellow-400' : 'text-red-400')}`}>
                                     ${formData.difference?.toLocaleString()}
                                 </span>
                             </div>

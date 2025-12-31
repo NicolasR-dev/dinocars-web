@@ -219,7 +219,7 @@ export default function Dashboard() {
                             </div>
                           </td>
                           <td className="p-3">
-                            <span className={`px-2 py-1 rounded text-xs font-bold ${record.status === 'CUADRA' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'
+                            <span className={`px-2 py-1 rounded text-xs font-bold ${record.status === 'CUADRA' ? 'bg-emerald-500/20 text-emerald-400' : (record.status === 'EXCEDENTE' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400')
                               }`}>
                               {record.status}
                             </span>
@@ -228,7 +228,7 @@ export default function Dashboard() {
                             {record.rides_today}
                           </td>
                           <td className="p-3 text-right">${record.daily_cash_generated?.toLocaleString()}</td>
-                          <td className={`p-3 text-right ${record.difference !== 0 ? 'text-red-400' : 'text-slate-400'}`}>
+                          <td className={`p-3 text-right ${record.difference === 0 ? 'text-slate-400' : (record.difference > 0 ? 'text-yellow-400' : 'text-red-400')}`}>
                             {record.difference}
                           </td>
                         </tr>

@@ -179,7 +179,7 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db), current
     return db_user
 
 @app.get("/users/", response_model=List[schemas.User])
-def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_active_admin)):
+def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
     users = db.query(models.User).offset(skip).limit(limit).all()
     return users
 

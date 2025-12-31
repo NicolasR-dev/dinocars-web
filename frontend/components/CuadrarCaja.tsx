@@ -247,13 +247,13 @@ export default function CuadrarCaja({ initialRides }: { initialRides?: number })
                     <p className="text-sm text-slate-400">Efectivo Generado Hoy</p>
                     <p className="text-2xl font-bold text-emerald-400">${calculation.efectivo_diario_generado.toLocaleString()}</p>
                 </div>
-                <div className={`glass p-4 rounded-xl border-l-4 ${calculation.estado_caja === 'CUADRA' ? 'border-emerald-500' : 'border-red-500'}`}>
+                <div className={`glass p-4 rounded-xl border-l-4 ${calculation.estado_caja === 'CUADRA' ? 'border-emerald-500' : (calculation.estado_caja === 'EXCEDENTE' ? 'border-yellow-500' : 'border-red-500')}`}>
                     <p className="text-sm text-slate-400">Estado</p>
                     <div className="flex items-center gap-2">
-                        <p className={`text-2xl font-bold ${calculation.estado_caja === 'CUADRA' ? 'text-emerald-400' : 'text-red-400'}`}>
+                        <p className={`text-2xl font-bold ${calculation.estado_caja === 'CUADRA' ? 'text-emerald-400' : (calculation.estado_caja === 'EXCEDENTE' ? 'text-yellow-400' : 'text-red-400')}`}>
                             {calculation.estado_caja}
                         </p>
-                        {calculation.estado_caja === 'CUADRA' ? <CheckCircle className="text-emerald-500" /> : <AlertTriangle className="text-red-500" />}
+                        {calculation.estado_caja === 'CUADRA' ? <CheckCircle className="text-emerald-500" /> : (calculation.estado_caja === 'EXCEDENTE' ? <AlertTriangle className="text-yellow-500" /> : <AlertTriangle className="text-red-500" />)}
                     </div>
                     {calculation.diferencia !== 0 && (
                         <p className="text-red-400 font-mono mt-1">
