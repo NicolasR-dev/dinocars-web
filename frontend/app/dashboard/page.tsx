@@ -35,7 +35,7 @@ export default function Dashboard() {
     }
     try {
       const decoded: any = jwtDecode(token);
-      setUser(decoded);
+      setUser({ ...decoded, username: decoded.sub });
       // Load history for everyone, but filtered by month initially
       loadHistory(new Date().toISOString().slice(0, 7));
     } catch (e) {
@@ -90,7 +90,7 @@ export default function Dashboard() {
         </button>
       </header>
 
-      <main className="max-w-4xl mx-auto p-6 mt-6">
+      <main className="max-w-7xl mx-auto p-6 mt-6">
         {/* Tabs */}
         <div className="flex gap-4 mb-8 overflow-x-auto pb-2">
           <button

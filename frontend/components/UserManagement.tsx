@@ -272,7 +272,7 @@ export default function UserManagement({ currentUser }: { currentUser: any }) {
                                         return (
                                             <div
                                                 key={`${user.id}-${dateStr}`}
-                                                className={`h-14 rounded-lg border transition-all relative group ${userSchedule
+                                                className={`h-12 rounded-lg border transition-all relative group ${userSchedule
                                                     ? `${user.color} border-white/10`
                                                     : 'bg-slate-800/20 border-slate-700/30 hover:bg-slate-800/50 cursor-pointer'}`}
                                                 onClick={() => {
