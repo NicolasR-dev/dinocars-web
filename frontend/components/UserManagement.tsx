@@ -230,20 +230,7 @@ export default function UserManagement({ currentUser }: { currentUser: any }) {
                 </h3>
                 {currentUser.role === 'admin' && (
                     <div className="flex gap-2">
-                        <button
-                            onClick={async () => {
-                                if (!confirm('¿Actualizar estructura de base de datos? (Solo si hay errores)')) return;
-                                try {
-                                    const res = await api.post('/admin/migrate-db');
-                                    alert('Base de datos actualizada: ' + JSON.stringify(res.data.details));
-                                } catch (e) {
-                                    alert('Error al actualizar BD');
-                                }
-                            }}
-                            className="px-4 py-2 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors border border-slate-700"
-                        >
-                            Actualizar BD
-                        </button>
+
                         <button
                             onClick={openCreateUser}
                             className="btn-primary flex items-center gap-2 px-4 py-2 text-sm"
@@ -313,7 +300,7 @@ export default function UserManagement({ currentUser }: { currentUser: any }) {
 
                         {/* Grid Rows */}
                         <div className="space-y-1">
-                            {users.map(user => (
+                            {users.filter(user => user.role !== 'admin').map(user => (
                                 <div key={user.id} className="grid grid-cols-8 gap-1 items-center">
                                     {/* User Info */}
                                     <div className="p-2 bg-slate-800/30 rounded-lg border border-slate-700/50 h-full flex flex-col justify-center">
