@@ -21,6 +21,10 @@ class UserBase(BaseModel):
     role: str = "worker"
     default_start_time: Optional[str] = None
     default_end_time: Optional[str] = None
+    opening_start_time: Optional[str] = None
+    opening_end_time: Optional[str] = None
+    closing_start_time: Optional[str] = None
+    closing_end_time: Optional[str] = None
 
 class UserCreate(UserBase):
     password: str
@@ -31,6 +35,10 @@ class UserUpdate(BaseModel):
     role: Optional[str] = None
     default_start_time: Optional[str] = None
     default_end_time: Optional[str] = None
+    opening_start_time: Optional[str] = None
+    opening_end_time: Optional[str] = None
+    closing_start_time: Optional[str] = None
+    closing_end_time: Optional[str] = None
 
 class User(UserBase):
     id: int
