@@ -334,6 +334,7 @@ export default function UserManagement({ currentUser }: { currentUser: any }) {
                                                     : 'bg-slate-800/20 border-slate-700/30 hover:bg-slate-800/50 cursor-pointer'}`}
                                                 onClick={() => {
                                                     if (!userSchedule && (currentUser.role === 'admin' || currentUser.role === 'manager')) {
+                                                        console.log('Selected User:', user); // DEBUG
                                                         setSelectedUserForSchedule(user);
                                                         setNewSchedule({
                                                             date: dateStr,
