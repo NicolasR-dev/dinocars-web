@@ -5,7 +5,7 @@ import api from '@/lib/api';
 import { motion } from 'framer-motion';
 import { DollarSign, Save, AlertTriangle, CheckCircle, Calendar, User } from 'lucide-react';
 
-export default function CuadrarCaja({ initialRides }: { initialRides?: number }) {
+export default function CuadrarCaja({ initialRides, currentUser }: { initialRides?: number, currentUser?: any }) {
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
     const [prevData, setPrevData] = useState<any>(null);
@@ -27,7 +27,10 @@ export default function CuadrarCaja({ initialRides }: { initialRides?: number })
 
     useEffect(() => {
         loadInitialData();
-    }, []);
+        if (currentUser && currentUser.username) {
+            setFormData(prev => ({ ...prev, worker_name: currentUser.username }));
+        }
+    }, [currentUser]);
 
     useEffect(() => {
         if (initialRides !== undefined) {
@@ -132,18 +135,14 @@ export default function CuadrarCaja({ initialRides }: { initialRides?: number })
                     </div>
                     <div className="space-y-2">
                         <label className="text-sm text-slate-400">Trabajador</label>
-                        <select
+                        <input
+                            type="text"
                             name="worker_name"
                             value={formData.worker_name}
                             onChange={handleInputChange}
-                            className="input-premium w-full text-white appearance-none"
-                        >
-                            <option value="">Seleccionar...</option>
-                            <option value="Nicolas">Nicolas</option>
-                            <option value="Catalina">Catalina</option>
-                            <option value="Josefa">Josefa</option>
-                            <option value="Otro">Otro</option>
-                        </select>
+                            className="input-premium w-full text-white"
+                            placeholder="Nombre del trabajador"
+                        />
                     </div>
 
                     <div className="space-y-2">

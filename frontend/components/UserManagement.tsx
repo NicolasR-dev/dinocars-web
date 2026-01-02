@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User, Plus, Trash2, Calendar, Clock, Save, X, Edit, ChevronLeft, ChevronRight } from 'lucide-react';
 import api from '@/lib/api';
+import MonthlyScheduleView from './MonthlyScheduleView';
 
 const DAYS_ES = {
     'Monday': 'Lunes',
@@ -34,6 +35,7 @@ export default function UserManagement({ currentUser }: { currentUser: any }) {
     const [schedules, setSchedules] = useState<any[]>([]);
     const [selectedUserForSchedule, setSelectedUserForSchedule] = useState<any>(null);
     const [newSchedule, setNewSchedule] = useState({ day_of_week: 'Monday', start_time: '09:00', end_time: '18:00' });
+    const [viewMode, setViewMode] = useState<'weekly' | 'monthly'>('weekly');
 
     useEffect(() => {
         loadUsers();
@@ -127,6 +129,21 @@ export default function UserManagement({ currentUser }: { currentUser: any }) {
         }
     };
 
+    // Helper to calculate hours
+    const calculateHours = (start: string, end: string) => {
+        const [startH, startM] = start.split(':').map(Number);
+        const [endH, endM] = end.split(':').map(Number);
+        const startDate = new Date(0, 0, 0, startH, startM);
+        const endDate = new Date(0, 0, 0, endH, endM);
+        let diff = (endDate.getTime() - startDate.getTime()) / 1000 / 60 / 60;
+        if (diff < 0) diff += 24;
+        return diff;
+    };
+
+    const getUserTotalHours = (userSchedules: any[]) => {
+        return userSchedules.reduce((acc, curr) => acc + calculateHours(curr.start_time, curr.end_time), 0);
+    };
+
     return (
         <div className="space-y-8">
             {/* Header & Actions */}
@@ -146,42 +163,64 @@ export default function UserManagement({ currentUser }: { currentUser: any }) {
                 )}
             </div>
 
+
+
             {/* Global Visual Schedule */}
             <div className="glass p-6 rounded-xl border border-slate-700">
-                <h4 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                    <Calendar className="text-cyan-400" />
-                    Horario Semanal Global
-                </h4>
-
-                <div className="grid grid-cols-7 gap-2">
-                    {DAYS_ORDER.map(day => (
-                        <div key={day} className="space-y-2">
-                            <div className="text-center py-2 bg-slate-800/50 rounded-lg border border-slate-700">
-                                <span className="text-sm font-bold text-slate-300">{(DAYS_ES as any)[day]}</span>
-                            </div>
-                            <div className="space-y-2 min-h-[100px]">
-                                {schedules.filter(s => s.day_of_week === day).sort((a, b) => a.start_time.localeCompare(b.start_time)).map(schedule => (
-                                    <div
-                                        key={schedule.id}
-                                        className={`p-2 rounded-lg text-xs border border-white/10 shadow-sm ${schedule.user.color} text-white relative group`}
-                                    >
-                                        <div className="font-bold truncate">{schedule.user.username}</div>
-                                        <div className="font-mono opacity-90">{schedule.start_time} - {schedule.end_time}</div>
-
-                                        {(currentUser.role === 'admin' || currentUser.role === 'manager') && (
-                                            <button
-                                                onClick={() => handleDeleteSchedule(schedule.id)}
-                                                className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 bg-black/20 hover:bg-black/40 rounded p-0.5 transition-all"
-                                            >
-                                                <X className="w-3 h-3" />
-                                            </button>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    ))}
+                <div className="flex justify-between items-center mb-4">
+                    <h4 className="text-lg font-bold text-white flex items-center gap-2">
+                        <Calendar className="text-cyan-400" />
+                        Horario Global
+                    </h4>
+                    <div className="flex bg-slate-800 rounded-lg p-1">
+                        <button
+                            onClick={() => setViewMode('weekly')}
+                            className={`px-3 py-1 text-xs rounded-md transition-colors ${viewMode === 'weekly' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                        >
+                            Semanal
+                        </button>
+                        <button
+                            onClick={() => setViewMode('monthly')}
+                            className={`px-3 py-1 text-xs rounded-md transition-colors ${viewMode === 'monthly' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                        >
+                            Mensual
+                        </button>
+                    </div>
                 </div>
+
+                {viewMode === 'weekly' ? (
+                    <div className="grid grid-cols-7 gap-2">
+                        {DAYS_ORDER.map(day => (
+                            <div key={day} className="space-y-2">
+                                <div className="text-center py-2 bg-slate-800/50 rounded-lg border border-slate-700">
+                                    <span className="text-sm font-bold text-slate-300">{(DAYS_ES as any)[day]}</span>
+                                </div>
+                                <div className="space-y-2 min-h-[100px]">
+                                    {schedules.filter(s => s.day_of_week === day).sort((a, b) => a.start_time.localeCompare(b.start_time)).map(schedule => (
+                                        <div
+                                            key={schedule.id}
+                                            className={`p-2 rounded-lg text-xs border border-white/10 shadow-sm ${schedule.user.color} text-white relative group`}
+                                        >
+                                            <div className="font-bold truncate">{schedule.user.username}</div>
+                                            <div className="font-mono opacity-90">{schedule.start_time} - {schedule.end_time}</div>
+
+                                            {(currentUser.role === 'admin' || currentUser.role === 'manager') && (
+                                                <button
+                                                    onClick={() => handleDeleteSchedule(schedule.id)}
+                                                    className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 bg-black/20 hover:bg-black/40 rounded p-0.5 transition-all"
+                                                >
+                                                    <X className="w-3 h-3" />
+                                                </button>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <MonthlyScheduleView schedules={schedules} />
+                )}
             </div>
 
             {/* User List */}
@@ -192,12 +231,17 @@ export default function UserManagement({ currentUser }: { currentUser: any }) {
                         <div className="flex justify-between items-start mb-4 pl-3">
                             <div>
                                 <h4 className="font-bold text-white text-lg">{user.username}</h4>
-                                <span className={`text-xs px-2 py-1 rounded-full uppercase font-bold ${user.role === 'admin' ? 'bg-purple-500/20 text-purple-400' :
+                                <div className="flex items-center gap-2 mt-1">
+                                    <span className={`text-xs px-2 py-1 rounded-full uppercase font-bold ${user.role === 'admin' ? 'bg-purple-500/20 text-purple-400' :
                                         user.role === 'manager' ? 'bg-cyan-500/20 text-cyan-400' :
                                             'bg-slate-500/20 text-slate-400'
-                                    }`}>
-                                    {user.role === 'worker' ? 'Trabajador' : (user.role === 'manager' ? 'Encargado' : 'Admin')}
-                                </span>
+                                        }`}>
+                                        {user.role === 'worker' ? 'Trabajador' : (user.role === 'manager' ? 'Encargado' : 'Admin')}
+                                    </span>
+                                    <span className="text-xs text-slate-400 font-mono bg-slate-800 px-2 py-1 rounded-full">
+                                        {getUserTotalHours(user.schedules || []).toFixed(1)} hrs/sem
+                                    </span>
+                                </div>
                             </div>
                             {currentUser.role === 'admin' && (
                                 <div className="flex gap-1">
@@ -309,6 +353,23 @@ export default function UserManagement({ currentUser }: { currentUser: any }) {
                                         ))}
                                     </select>
                                 </div>
+
+                                {/* Quick Shifts */}
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => setNewSchedule({ ...newSchedule, start_time: '10:00', end_time: '17:30' })}
+                                        className="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-xs rounded-lg text-slate-300 transition-colors"
+                                    >
+                                        Apertura (10:00 - 17:30)
+                                    </button>
+                                    <button
+                                        onClick={() => setNewSchedule({ ...newSchedule, start_time: '12:30', end_time: '20:00' })}
+                                        className="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-xs rounded-lg text-slate-300 transition-colors"
+                                    >
+                                        Cierre (12:30 - 20:00)
+                                    </button>
+                                </div>
+
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                         <label className="text-sm text-slate-400">Inicio</label>

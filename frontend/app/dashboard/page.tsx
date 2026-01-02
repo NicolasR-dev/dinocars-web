@@ -159,7 +159,7 @@ export default function Dashboard() {
                 <DollarSign className="text-emerald-400" />
                 Cierre de Caja
               </h2>
-              <CuadrarCaja initialRides={calculatedRides} />
+              <CuadrarCaja initialRides={calculatedRides} currentUser={user} />
             </div>
           )}
 
