@@ -191,17 +191,17 @@ export default function UserManagement({ currentUser }: { currentUser: any }) {
 
     const getUserTotalHours = (userSchedules: any[]) => {
         // Filter schedules for the current week
+        const weekStart = new Date(currentWeekStart);
         const weekEnd = new Date(currentWeekStart);
         weekEnd.setDate(weekEnd.getDate() + 6);
 
-        const weeklySchedules = userSchedules.filter((s: any) => {
-            const sDate = new Date(s.date);
-            // Reset time parts for accurate comparison
-            const sDateOnly = new Date(sDate.getFullYear(), sDate.getMonth(), sDate.getDate());
-            const startOnly = new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth(), currentWeekStart.getDate());
-            const endOnly = new Date(weekEnd.getFullYear(), weekEnd.getMonth(), weekEnd.getDate());
+        // Normalize to YYYY-MM-DD strings for comparison
+        const startStr = weekStart.toISOString().split('T')[0];
+        const endStr = weekEnd.toISOString().split('T')[0];
 
-            return sDateOnly >= startOnly && sDateOnly <= endOnly;
+        const weeklySchedules = userSchedules.filter((s: any) => {
+            // s.date is already YYYY-MM-DD
+            return s.date >= startStr && s.date <= endStr;
         });
 
         return weeklySchedules.reduce((acc: number, curr: any) => acc + calculateHours(curr.start_time, curr.end_time), 0);
