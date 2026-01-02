@@ -211,10 +211,52 @@ def update_user(user_id: int, user_update: schemas.UserUpdate, db: Session = Dep
     
     if user_update.role:
         db_user.role = user_update.role
+
+    # Update new schedule fields
+    if user_update.default_start_time is not None:
+        db_user.default_start_time = user_update.default_start_time
+    if user_update.default_end_time is not None:
+        db_user.default_end_time = user_update.default_end_time
+    if user_update.opening_start_time is not None:
+        db_user.opening_start_time = user_update.opening_start_time
+    if user_update.opening_end_time is not None:
+        db_user.opening_end_time = user_update.opening_end_time
+    if user_update.closing_start_time is not None:
+        db_user.closing_start_time = user_update.closing_start_time
+    if user_update.closing_end_time is not None:
+        db_user.closing_end_time = user_update.closing_end_time
         
     db.commit()
     db.refresh(db_user)
     return db_user
+
+@app.post("/admin/migrate-db")
+def migrate_db(db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_active_admin)):
+    from sqlalchemy import text
+    try:
+        # Attempt to add columns if they don't exist
+        # We use a try-except block for each column to avoid errors if some already exist
+        columns = [
+            "default_start_time VARCHAR",
+            "default_end_time VARCHAR",
+            "opening_start_time VARCHAR",
+            "opening_end_time VARCHAR",
+            "closing_start_time VARCHAR",
+            "closing_end_time VARCHAR"
+        ]
+        
+        results = []
+        for col in columns:
+            try:
+                db.execute(text(f"ALTER TABLE users ADD COLUMN {col}"))
+                results.append(f"Added {col}")
+            except Exception as e:
+                results.append(f"Skipped {col} (might exist)")
+        
+        db.commit()
+        return {"status": "success", "details": results}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # Schedule Management Endpoints
 @app.post("/schedules/", response_model=schemas.Schedule)
