@@ -3,7 +3,7 @@ from typing import Optional, List
 from datetime import datetime
 
 class ScheduleBase(BaseModel):
-    day_of_week: str
+    date: date
     start_time: str
     end_time: str
 

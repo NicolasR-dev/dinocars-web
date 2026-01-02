@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, ForeignKey, Date
 from sqlalchemy.orm import relationship
 from .database import Base
 from datetime import datetime
@@ -18,7 +18,7 @@ class Schedule(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
-    day_of_week = Column(String) # Monday, Tuesday, etc.
+    date = Column(Date) # Specific date instead of day_of_week
     start_time = Column(String) # HH:MM
     end_time = Column(String) # HH:MM
 

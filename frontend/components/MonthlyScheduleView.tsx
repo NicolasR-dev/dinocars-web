@@ -63,10 +63,10 @@ export default function MonthlyScheduleView({ schedules }: { schedules: any[] })
                 {days.map((date, index) => {
                     if (!date) return <div key={`empty-${index}`} className="bg-slate-800/20 rounded-lg min-h-[100px]"></div>;
 
-                    // Find schedules for this day of week
-                    const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
+                    // Find schedules for this specific date
+                    const dateStr = date.toISOString().split('T')[0];
                     const daySchedules = schedules
-                        .filter(s => s.day_of_week === dayName)
+                        .filter(s => s.date === dateStr)
                         .sort((a, b) => a.start_time.localeCompare(b.start_time));
 
                     const isToday = new Date().toDateString() === date.toDateString();

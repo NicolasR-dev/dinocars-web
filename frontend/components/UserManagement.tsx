@@ -34,8 +34,18 @@ export default function UserManagement({ currentUser }: { currentUser: any }) {
     // Schedule State
     const [schedules, setSchedules] = useState<any[]>([]);
     const [selectedUserForSchedule, setSelectedUserForSchedule] = useState<any>(null);
-    const [newSchedule, setNewSchedule] = useState({ day_of_week: 'Monday', start_time: '09:00', end_time: '18:00' });
+    const [newSchedule, setNewSchedule] = useState({ date: '', start_time: '09:00', end_time: '18:00' });
     const [viewMode, setViewMode] = useState<'weekly' | 'monthly'>('weekly');
+
+    // Date Navigation
+    const [currentWeekStart, setCurrentWeekStart] = useState(getMonday(new Date()));
+
+    function getMonday(d: Date) {
+        d = new Date(d);
+        var day = d.getDay(),
+            diff = d.getDate() - day + (day == 0 ? -6 : 1); // adjust when day is sunday
+        return new Date(d.setDate(diff));
+    }
 
     useEffect(() => {
         loadUsers();
@@ -141,8 +151,35 @@ export default function UserManagement({ currentUser }: { currentUser: any }) {
     };
 
     const getUserTotalHours = (userSchedules: any[]) => {
-        return userSchedules.reduce((acc, curr) => acc + calculateHours(curr.start_time, curr.end_time), 0);
+        // Filter schedules for the current week
+        const weekEnd = new Date(currentWeekStart);
+        weekEnd.setDate(weekEnd.getDate() + 6);
+
+        const weeklySchedules = userSchedules.filter((s: any) => {
+            const sDate = new Date(s.date);
+            // Reset time parts for accurate comparison
+            const sDateOnly = new Date(sDate.getFullYear(), sDate.getMonth(), sDate.getDate());
+            const startOnly = new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth(), currentWeekStart.getDate());
+            const endOnly = new Date(weekEnd.getFullYear(), weekEnd.getMonth(), weekEnd.getDate());
+
+            return sDateOnly >= startOnly && sDateOnly <= endOnly;
+        });
+
+        return weeklySchedules.reduce((acc: number, curr: any) => acc + calculateHours(curr.start_time, curr.end_time), 0);
     };
+
+    const changeWeek = (offset: number) => {
+        const newStart = new Date(currentWeekStart);
+        newStart.setDate(newStart.getDate() + (offset * 7));
+        setCurrentWeekStart(newStart);
+    };
+
+    // Generate dates for the current week
+    const weekDates = Array.from({ length: 7 }, (_, i) => {
+        const d = new Date(currentWeekStart);
+        d.setDate(d.getDate() + i);
+        return d;
+    });
 
     return (
         <div className="space-y-8">
@@ -163,8 +200,6 @@ export default function UserManagement({ currentUser }: { currentUser: any }) {
                 )}
             </div>
 
-
-
             {/* Global Visual Schedule */}
             <div className="glass p-6 rounded-xl border border-slate-700">
                 <div className="flex justify-between items-center mb-4">
@@ -172,51 +207,73 @@ export default function UserManagement({ currentUser }: { currentUser: any }) {
                         <Calendar className="text-cyan-400" />
                         Horario Global
                     </h4>
-                    <div className="flex bg-slate-800 rounded-lg p-1">
-                        <button
-                            onClick={() => setViewMode('weekly')}
-                            className={`px-3 py-1 text-xs rounded-md transition-colors ${viewMode === 'weekly' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}
-                        >
-                            Semanal
-                        </button>
-                        <button
-                            onClick={() => setViewMode('monthly')}
-                            className={`px-3 py-1 text-xs rounded-md transition-colors ${viewMode === 'monthly' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}
-                        >
-                            Mensual
-                        </button>
+                    <div className="flex items-center gap-4">
+                        {viewMode === 'weekly' && (
+                            <div className="flex items-center gap-2 bg-slate-800 rounded-lg p-1">
+                                <button onClick={() => changeWeek(-1)} className="p-1 hover:bg-white/10 rounded transition-colors">
+                                    <ChevronLeft className="w-4 h-4 text-slate-400" />
+                                </button>
+                                <span className="text-xs font-bold text-slate-300 px-2">
+                                    {currentWeekStart.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} -
+                                    {new Date(new Date(currentWeekStart).setDate(currentWeekStart.getDate() + 6)).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                                </span>
+                                <button onClick={() => changeWeek(1)} className="p-1 hover:bg-white/10 rounded transition-colors">
+                                    <ChevronRight className="w-4 h-4 text-slate-400" />
+                                </button>
+                            </div>
+                        )}
+                        <div className="flex bg-slate-800 rounded-lg p-1">
+                            <button
+                                onClick={() => setViewMode('weekly')}
+                                className={`px-3 py-1 text-xs rounded-md transition-colors ${viewMode === 'weekly' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                            >
+                                Semanal
+                            </button>
+                            <button
+                                onClick={() => setViewMode('monthly')}
+                                className={`px-3 py-1 text-xs rounded-md transition-colors ${viewMode === 'monthly' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                            >
+                                Mensual
+                            </button>
+                        </div>
                     </div>
                 </div>
 
                 {viewMode === 'weekly' ? (
                     <div className="grid grid-cols-7 gap-2">
-                        {DAYS_ORDER.map(day => (
-                            <div key={day} className="space-y-2">
-                                <div className="text-center py-2 bg-slate-800/50 rounded-lg border border-slate-700">
-                                    <span className="text-sm font-bold text-slate-300">{(DAYS_ES as any)[day]}</span>
-                                </div>
-                                <div className="space-y-2 min-h-[100px]">
-                                    {schedules.filter(s => s.day_of_week === day).sort((a, b) => a.start_time.localeCompare(b.start_time)).map(schedule => (
-                                        <div
-                                            key={schedule.id}
-                                            className={`p-2 rounded-lg text-xs border border-white/10 shadow-sm ${schedule.user.color} text-white relative group`}
-                                        >
-                                            <div className="font-bold truncate">{schedule.user.username}</div>
-                                            <div className="font-mono opacity-90">{schedule.start_time} - {schedule.end_time}</div>
+                        {weekDates.map(date => {
+                            const dateStr = date.toISOString().split('T')[0];
+                            const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
 
-                                            {(currentUser.role === 'admin' || currentUser.role === 'manager') && (
-                                                <button
-                                                    onClick={() => handleDeleteSchedule(schedule.id)}
-                                                    className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 bg-black/20 hover:bg-black/40 rounded p-0.5 transition-all"
-                                                >
-                                                    <X className="w-3 h-3" />
-                                                </button>
-                                            )}
-                                        </div>
-                                    ))}
+                            return (
+                                <div key={dateStr} className="space-y-2">
+                                    <div className={`text-center py-2 rounded-lg border ${date.toDateString() === new Date().toDateString() ? 'bg-indigo-500/20 border-indigo-500/50' : 'bg-slate-800/50 border-slate-700'}`}>
+                                        <span className="text-xs font-bold text-slate-400 block uppercase">{(DAYS_ES as any)[dayName]}</span>
+                                        <span className="text-sm font-bold text-white">{date.getDate()}</span>
+                                    </div>
+                                    <div className="space-y-2 min-h-[100px]">
+                                        {schedules.filter(s => s.date === dateStr).sort((a, b) => a.start_time.localeCompare(b.start_time)).map(schedule => (
+                                            <div
+                                                key={schedule.id}
+                                                className={`p-2 rounded-lg text-xs border border-white/10 shadow-sm ${schedule.user.color} text-white relative group`}
+                                            >
+                                                <div className="font-bold truncate">{schedule.user.username}</div>
+                                                <div className="font-mono opacity-90">{schedule.start_time} - {schedule.end_time}</div>
+
+                                                {(currentUser.role === 'admin' || currentUser.role === 'manager') && (
+                                                    <button
+                                                        onClick={() => handleDeleteSchedule(schedule.id)}
+                                                        className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 bg-black/20 hover:bg-black/40 rounded p-0.5 transition-all"
+                                                    >
+                                                        <X className="w-3 h-3" />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 ) : (
                     <MonthlyScheduleView schedules={schedules} />
@@ -257,7 +314,11 @@ export default function UserManagement({ currentUser }: { currentUser: any }) {
 
                         {(currentUser.role === 'admin' || currentUser.role === 'manager') && (
                             <button
-                                onClick={() => setSelectedUserForSchedule(user)}
+                                onClick={() => {
+                                    setSelectedUserForSchedule(user);
+                                    // Default to today or start of current week
+                                    setNewSchedule({ ...newSchedule, date: new Date().toISOString().split('T')[0] });
+                                }}
                                 className="w-full py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm flex items-center justify-center gap-2 transition-colors ml-2 w-[calc(100%-0.5rem)]"
                             >
                                 <Plus className="w-4 h-4" />
@@ -342,16 +403,13 @@ export default function UserManagement({ currentUser }: { currentUser: any }) {
 
                             <div className="space-y-4">
                                 <div className="space-y-2">
-                                    <label className="text-sm text-slate-400">Día</label>
-                                    <select
-                                        value={newSchedule.day_of_week}
-                                        onChange={e => setNewSchedule({ ...newSchedule, day_of_week: e.target.value })}
+                                    <label className="text-sm text-slate-400">Fecha</label>
+                                    <input
+                                        type="date"
+                                        value={newSchedule.date}
+                                        onChange={e => setNewSchedule({ ...newSchedule, date: e.target.value })}
                                         className="input-premium w-full text-white"
-                                    >
-                                        {DAYS_ORDER.map(day => (
-                                            <option key={day} value={day}>{(DAYS_ES as any)[day]}</option>
-                                        ))}
-                                    </select>
+                                    />
                                 </div>
 
                                 {/* Quick Shifts */}
