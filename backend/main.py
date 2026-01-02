@@ -198,33 +198,26 @@ def update_user(user_id: int, user_update: schemas.UserUpdate, db: Session = Dep
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    if user_update.username:
-        # Check uniqueness if username is changing
-        if user_update.username != db_user.username:
-            existing_user = db.query(models.User).filter(models.User.username == user_update.username).first()
+    # Update fields based on what was sent
+    update_data = user_update.dict(exclude_unset=True)
+    
+    # Handle specific fields that need logic
+    if "password" in update_data and update_data["password"]:
+        db_user.hashed_password = auth.get_password_hash(update_data["password"])
+        del update_data["password"] # Don't update directly
+    
+    if "username" in update_data:
+        if update_data["username"] != db_user.username:
+            existing_user = db.query(models.User).filter(models.User.username == update_data["username"]).first()
             if existing_user:
                 raise HTTPException(status_code=400, detail="Username already registered")
-        db_user.username = user_update.username
-    
-    if user_update.password:
-        db_user.hashed_password = auth.get_password_hash(user_update.password)
-    
-    if user_update.role:
-        db_user.role = user_update.role
+        db_user.username = update_data["username"]
+        del update_data["username"]
 
-    # Update new schedule fields
-    if user_update.default_start_time is not None:
-        db_user.default_start_time = user_update.default_start_time
-    if user_update.default_end_time is not None:
-        db_user.default_end_time = user_update.default_end_time
-    if user_update.opening_start_time is not None:
-        db_user.opening_start_time = user_update.opening_start_time
-    if user_update.opening_end_time is not None:
-        db_user.opening_end_time = user_update.opening_end_time
-    if user_update.closing_start_time is not None:
-        db_user.closing_start_time = user_update.closing_start_time
-    if user_update.closing_end_time is not None:
-        db_user.closing_end_time = user_update.closing_end_time
+    # Update remaining fields (role, schedule times, etc.)
+    for key, value in update_data.items():
+        if hasattr(db_user, key):
+            setattr(db_user, key, value)
         
     db.commit()
     db.refresh(db_user)
