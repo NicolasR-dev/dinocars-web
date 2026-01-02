@@ -10,6 +10,8 @@ class User(Base):
     username = Column(String, unique=True, index=True)
     hashed_password = Column(String)
     role = Column(String, default="worker") # admin, manager, worker
+    default_start_time = Column(String, nullable=True)
+    default_end_time = Column(String, nullable=True)
     
     schedules = relationship("Schedule", back_populates="user")
 

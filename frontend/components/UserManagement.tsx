@@ -27,7 +27,13 @@ export default function UserManagement({ currentUser }: { currentUser: any }) {
     // User Modal State
     const [isUserModalOpen, setIsUserModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<any>(null);
-    const [userForm, setUserForm] = useState({ username: '', password: '', role: 'worker' });
+    const [userForm, setUserForm] = useState({
+        username: '',
+        password: '',
+        role: 'worker',
+        default_start_time: '',
+        default_end_time: ''
+    });
 
     // Schedule State
     const [schedules, setSchedules] = useState<any[]>([]);
@@ -73,27 +79,46 @@ export default function UserManagement({ currentUser }: { currentUser: any }) {
 
     const openCreateUser = () => {
         setEditingUser(null);
-        setUserForm({ username: '', password: '', role: 'worker' });
+        setUserForm({
+            username: '',
+            password: '',
+            role: 'worker',
+            default_start_time: '',
+            default_end_time: ''
+        });
         setIsUserModalOpen(true);
     };
 
     const openEditUser = (user: any) => {
         setEditingUser(user);
-        setUserForm({ username: user.username, password: '', role: user.role });
+        setUserForm({
+            username: user.username,
+            password: '',
+            role: user.role,
+            default_start_time: user.default_start_time || '',
+            default_end_time: user.default_end_time || ''
+        });
         setIsUserModalOpen(true);
     };
 
     const handleSaveUser = async () => {
         setLoading(true);
         try {
+            const payload: any = {
+                username: userForm.username,
+                role: userForm.role,
+                default_start_time: userForm.default_start_time || null,
+                default_end_time: userForm.default_end_time || null
+            };
+
             if (editingUser) {
                 // Update
-                const payload: any = { username: userForm.username, role: userForm.role };
                 if (userForm.password) payload.password = userForm.password;
                 await api.put(`/users/${editingUser.id}`, payload);
             } else {
                 // Create
-                await api.post('/users/', userForm);
+                payload.password = userForm.password;
+                await api.post('/users/', payload);
             }
             setIsUserModalOpen(false);
             loadUsers();
@@ -278,7 +303,11 @@ export default function UserManagement({ currentUser }: { currentUser: any }) {
                                                 onClick={() => {
                                                     if (!userSchedule && (currentUser.role === 'admin' || currentUser.role === 'manager')) {
                                                         setSelectedUserForSchedule(user);
-                                                        setNewSchedule({ ...newSchedule, date: dateStr });
+                                                        setNewSchedule({
+                                                            date: dateStr,
+                                                            start_time: user.default_start_time || '09:00',
+                                                            end_time: user.default_end_time || '18:00'
+                                                        });
                                                     }
                                                 }}
                                             >
@@ -394,6 +423,32 @@ export default function UserManagement({ currentUser }: { currentUser: any }) {
                                         <option value="admin">Administrador</option>
                                     </select>
                                 </div>
+
+                                {/* Default Schedule Inputs */}
+                                <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-700">
+                                    <div className="col-span-2">
+                                        <label className="text-sm font-bold text-slate-300">Horario Predeterminado</label>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-xs text-slate-400">Inicio</label>
+                                        <input
+                                            type="time"
+                                            value={userForm.default_start_time}
+                                            onChange={e => setUserForm({ ...userForm, default_start_time: e.target.value })}
+                                            className="input-premium w-full text-white"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-xs text-slate-400">Fin</label>
+                                        <input
+                                            type="time"
+                                            value={userForm.default_end_time}
+                                            onChange={e => setUserForm({ ...userForm, default_end_time: e.target.value })}
+                                            className="input-premium w-full text-white"
+                                        />
+                                    </div>
+                                </div>
+
                                 <div className="flex justify-end gap-3 mt-6">
                                     <button onClick={() => setIsUserModalOpen(false)} className="px-4 py-2 text-slate-400 hover:text-white">Cancelar</button>
                                     <button onClick={handleSaveUser} disabled={loading} className="btn-primary px-6 py-2">Guardar</button>

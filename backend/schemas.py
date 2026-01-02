@@ -19,6 +19,8 @@ class Schedule(ScheduleBase):
 class UserBase(BaseModel):
     username: str
     role: str = "worker"
+    default_start_time: Optional[str] = None
+    default_end_time: Optional[str] = None
 
 class UserCreate(UserBase):
     password: str
@@ -27,6 +29,8 @@ class UserUpdate(BaseModel):
     username: Optional[str] = None
     password: Optional[str] = None
     role: Optional[str] = None
+    default_start_time: Optional[str] = None
+    default_end_time: Optional[str] = None
 
 class User(UserBase):
     id: int
