@@ -16,8 +16,6 @@ const DAYS_ES = {
     'Sunday': 'Domingo'
 };
 
-const DAYS_ORDER = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-
 const USER_COLORS = [
     'bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-yellow-500', 'bg-pink-500', 'bg-indigo-500', 'bg-red-500', 'bg-teal-500'
 ];
@@ -201,8 +199,8 @@ export default function UserManagement({ currentUser }: { currentUser: any }) {
             </div>
 
             {/* Global Visual Schedule */}
-            <div className="glass p-6 rounded-xl border border-slate-700">
-                <div className="flex justify-between items-center mb-4">
+            <div className="glass p-6 rounded-xl border border-slate-700 overflow-x-auto">
+                <div className="flex justify-between items-center mb-4 min-w-[800px]">
                     <h4 className="text-lg font-bold text-white flex items-center gap-2">
                         <Calendar className="text-cyan-400" />
                         Horario Global
@@ -240,67 +238,101 @@ export default function UserManagement({ currentUser }: { currentUser: any }) {
                 </div>
 
                 {viewMode === 'weekly' ? (
-                    <div className="grid grid-cols-7 gap-2">
-                        {weekDates.map(date => {
-                            const dateStr = date.toISOString().split('T')[0];
-                            const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
-
-                            return (
-                                <div key={dateStr} className="space-y-2">
-                                    <div className={`text-center py-2 rounded-lg border ${date.toDateString() === new Date().toDateString() ? 'bg-indigo-500/20 border-indigo-500/50' : 'bg-slate-800/50 border-slate-700'}`}>
-                                        <span className="text-xs font-bold text-slate-400 block uppercase">{(DAYS_ES as any)[dayName]}</span>
+                    <div className="min-w-[800px]">
+                        {/* Grid Header */}
+                        <div className="grid grid-cols-8 gap-1 mb-2">
+                            <div className="p-2 text-xs font-bold text-slate-500 uppercase">Usuario</div>
+                            {weekDates.map(date => {
+                                const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
+                                const isToday = date.toDateString() === new Date().toDateString();
+                                return (
+                                    <div key={date.toISOString()} className={`text-center py-2 rounded-lg border ${isToday ? 'bg-indigo-500/20 border-indigo-500/50' : 'bg-slate-800/50 border-slate-700'}`}>
+                                        <span className="text-[10px] font-bold text-slate-400 block uppercase">{(DAYS_ES as any)[dayName].substring(0, 3)}</span>
                                         <span className="text-sm font-bold text-white">{date.getDate()}</span>
                                     </div>
-                                    <div className="space-y-2 min-h-[100px]">
-                                        {schedules.filter(s => s.date === dateStr).sort((a, b) => a.start_time.localeCompare(b.start_time)).map(schedule => (
-                                            <div
-                                                key={schedule.id}
-                                                className={`p-2 rounded-lg text-xs border border-white/10 shadow-sm ${schedule.user.color} text-white relative group`}
-                                            >
-                                                <div className="font-bold truncate">{schedule.user.username}</div>
-                                                <div className="font-mono opacity-90">{schedule.start_time} - {schedule.end_time}</div>
+                                );
+                            })}
+                        </div>
 
-                                                {(currentUser.role === 'admin' || currentUser.role === 'manager') && (
-                                                    <button
-                                                        onClick={() => handleDeleteSchedule(schedule.id)}
-                                                        className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 bg-black/20 hover:bg-black/40 rounded p-0.5 transition-all"
-                                                    >
-                                                        <X className="w-3 h-3" />
-                                                    </button>
+                        {/* Grid Rows */}
+                        <div className="space-y-1">
+                            {users.map(user => (
+                                <div key={user.id} className="grid grid-cols-8 gap-1 items-center">
+                                    {/* User Info */}
+                                    <div className="p-2 bg-slate-800/30 rounded-lg border border-slate-700/50 h-full flex flex-col justify-center">
+                                        <span className="font-bold text-sm text-white truncate">{user.username}</span>
+                                        <span className="text-[10px] text-slate-400">{getUserTotalHours(user.schedules || []).toFixed(1)}h</span>
+                                    </div>
+
+                                    {/* Days */}
+                                    {weekDates.map(date => {
+                                        const dateStr = date.toISOString().split('T')[0];
+                                        const userSchedule = schedules.find(s => s.user.id === user.id && s.date === dateStr);
+
+                                        return (
+                                            <div
+                                                key={`${user.id}-${dateStr}`}
+                                                className={`h-14 rounded-lg border transition-all relative group ${userSchedule
+                                                    ? `${user.color} border-white/10`
+                                                    : 'bg-slate-800/20 border-slate-700/30 hover:bg-slate-800/50 cursor-pointer'}`}
+                                                onClick={() => {
+                                                    if (!userSchedule && (currentUser.role === 'admin' || currentUser.role === 'manager')) {
+                                                        setSelectedUserForSchedule(user);
+                                                        setNewSchedule({ ...newSchedule, date: dateStr });
+                                                    }
+                                                }}
+                                            >
+                                                {userSchedule ? (
+                                                    <div className="h-full flex flex-col items-center justify-center p-1">
+                                                        <span className="text-xs font-bold text-white">{userSchedule.start_time}</span>
+                                                        <span className="text-xs font-bold text-white/80">{userSchedule.end_time}</span>
+                                                        {(currentUser.role === 'admin' || currentUser.role === 'manager') && (
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleDeleteSchedule(userSchedule.id);
+                                                                }}
+                                                                className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                                                            >
+                                                                <X className="w-3 h-3" />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    (currentUser.role === 'admin' || currentUser.role === 'manager') && (
+                                                        <div className="h-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <Plus className="w-4 h-4 text-slate-500" />
+                                                        </div>
+                                                    )
                                                 )}
                                             </div>
-                                        ))}
-                                    </div>
+                                        );
+                                    })}
                                 </div>
-                            );
-                        })}
+                            ))}
+                        </div>
                     </div>
                 ) : (
                     <MonthlyScheduleView schedules={schedules} />
                 )}
             </div>
 
-            {/* User List */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {users.map((user: any) => (
-                    <div key={user.id} className="glass p-4 rounded-xl border border-slate-700 hover:border-indigo-500/50 transition-colors relative overflow-hidden">
-                        <div className={`absolute top-0 left-0 w-1 h-full ${user.color}`}></div>
-                        <div className="flex justify-between items-start mb-4 pl-3">
-                            <div>
-                                <h4 className="font-bold text-white text-lg">{user.username}</h4>
-                                <div className="flex items-center gap-2 mt-1">
-                                    <span className={`text-xs px-2 py-1 rounded-full uppercase font-bold ${user.role === 'admin' ? 'bg-purple-500/20 text-purple-400' :
+            {/* User List (Admin Only for Editing Users) */}
+            {currentUser.role === 'admin' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {users.map((user: any) => (
+                        <div key={user.id} className="glass p-4 rounded-xl border border-slate-700 hover:border-indigo-500/50 transition-colors relative overflow-hidden">
+                            <div className={`absolute top-0 left-0 w-1 h-full ${user.color}`}></div>
+                            <div className="flex justify-between items-center pl-3">
+                                <div>
+                                    <h4 className="font-bold text-white">{user.username}</h4>
+                                    <span className={`text-xs px-2 py-0.5 rounded-full uppercase font-bold ${user.role === 'admin' ? 'bg-purple-500/20 text-purple-400' :
                                         user.role === 'manager' ? 'bg-cyan-500/20 text-cyan-400' :
                                             'bg-slate-500/20 text-slate-400'
                                         }`}>
-                                        {user.role === 'worker' ? 'Trabajador' : (user.role === 'manager' ? 'Encargado' : 'Admin')}
-                                    </span>
-                                    <span className="text-xs text-slate-400 font-mono bg-slate-800 px-2 py-1 rounded-full">
-                                        {getUserTotalHours(user.schedules || []).toFixed(1)} hrs/sem
+                                        {user.role}
                                     </span>
                                 </div>
-                            </div>
-                            {currentUser.role === 'admin' && (
                                 <div className="flex gap-1">
                                     <button onClick={() => openEditUser(user)} className="p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
                                         <Edit className="w-4 h-4" />
@@ -309,25 +341,11 @@ export default function UserManagement({ currentUser }: { currentUser: any }) {
                                         <Trash2 className="w-4 h-4" />
                                     </button>
                                 </div>
-                            )}
+                            </div>
                         </div>
-
-                        {(currentUser.role === 'admin' || currentUser.role === 'manager') && (
-                            <button
-                                onClick={() => {
-                                    setSelectedUserForSchedule(user);
-                                    // Default to today or start of current week
-                                    setNewSchedule({ ...newSchedule, date: new Date().toISOString().split('T')[0] });
-                                }}
-                                className="w-full py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm flex items-center justify-center gap-2 transition-colors ml-2 w-[calc(100%-0.5rem)]"
-                            >
-                                <Plus className="w-4 h-4" />
-                                Asignar Turno
-                            </button>
-                        )}
-                    </div>
-                ))}
-            </div>
+                    ))}
+                </div>
+            )}
 
             {/* User Create/Edit Modal */}
             <AnimatePresence>
@@ -409,6 +427,7 @@ export default function UserManagement({ currentUser }: { currentUser: any }) {
                                         value={newSchedule.date}
                                         onChange={e => setNewSchedule({ ...newSchedule, date: e.target.value })}
                                         className="input-premium w-full text-white"
+                                        disabled // Date is pre-selected from grid
                                     />
                                 </div>
 

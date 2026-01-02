@@ -27,8 +27,11 @@ export default function CuadrarCaja({ initialRides, currentUser }: { initialRide
 
     useEffect(() => {
         loadInitialData();
-        if (currentUser && currentUser.username) {
-            setFormData(prev => ({ ...prev, worker_name: currentUser.username }));
+        if (currentUser) {
+            const name = currentUser.username || currentUser.sub || '';
+            if (name) {
+                setFormData(prev => ({ ...prev, worker_name: name }));
+            }
         }
     }, [currentUser]);
 
