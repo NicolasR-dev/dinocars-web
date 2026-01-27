@@ -48,12 +48,15 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
         username: str = payload.get("sub")
         role: str = payload.get("role")
         if username is None:
+            print("Auth Error: Username missing in token")
             raise credentials_exception
         token_data = schemas.TokenData(username=username, role=role)
-    except JWTError:
+    except JWTError as e:
+        print(f"Auth Error: JWT Validation failed: {e}")
         raise credentials_exception
     user = db.query(models.User).filter(models.User.username == token_data.username).first()
     if user is None:
+        print(f"Auth Error: User {token_data.username} not found in DB")
         raise credentials_exception
     return user
 

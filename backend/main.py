@@ -15,10 +15,14 @@ models.Base.metadata.create_all(bind=database.engine)
 app = FastAPI(title="DinoCars API")
 
 # CORS
-origins = ["*"]
+origins = [
+    "http://localhost:3000",
+    "https://dinocars-web.vercel.app",
+    "https://dinocars-web.onrender.com"
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins, # Next.js default port
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
