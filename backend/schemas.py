@@ -114,3 +114,4 @@ class BulkScheduleCreate(BaseModel):
     days_of_week: List[int] # 0=Monday, 6=Sunday
     start_time: str
     end_time: str
+    weekend_pattern: Optional[str] = None # ACA, CAC, ACA_ROTATING, CAC_ROTATING

@@ -56,10 +56,9 @@ export default function UserManagement({ currentUser }: { currentUser: any }) {
         end_date: '',
         days_of_week: [0, 1, 2, 3, 4], // Mon-Fri default
         start_time: '10:00',
-        end_time: '18:00'
+        end_time: '18:00',
+        weekend_pattern: ''
     });
-
-    // Date Navigation
     const [currentWeekStart, setCurrentWeekStart] = useState(getMonday(new Date()));
 
     function getMonday(d: Date) {
@@ -201,6 +200,13 @@ export default function UserManagement({ currentUser }: { currentUser: any }) {
         let diff = (endDate.getTime() - startDate.getTime()) / 1000 / 60 / 60;
         if (diff < 0) diff += 24;
         return diff;
+    };
+
+    const getShiftBadge = (start: string, end: string) => {
+        if (start === "10:00" && end === "20:00") return { label: "T", color: "bg-purple-500", full: "Total" };
+        if (start === "10:00" && end === "17:30") return { label: "A", color: "bg-emerald-500", full: "Apertura" };
+        if (start === "12:30" && end === "20:00") return { label: "C", color: "bg-orange-500", full: "Cierre" };
+        return null;
     };
 
     const getUserTotalHours = (userSchedules: any[]) => {
@@ -386,7 +392,18 @@ export default function UserManagement({ currentUser }: { currentUser: any }) {
                                                         }}
                                                     >
                                                         {userSchedule ? (
-                                                            <div className="h-full flex flex-col items-center justify-center p-1">
+                                                            <div className="h-full flex flex-col items-center justify-center p-1 relative">
+                                                                {(() => {
+                                                                    const badge = getShiftBadge(userSchedule.start_time, userSchedule.end_time);
+                                                                    if (badge) {
+                                                                        return (
+                                                                            <div className={`absolute top-0.5 right-0.5 w-4 h-4 rounded-full ${badge.color} text-[10px] font-bold text-white flex items-center justify-center shadow-lg border border-white/20`} title={badge.full}>
+                                                                                {badge.label}
+                                                                            </div>
+                                                                        );
+                                                                    }
+                                                                    return null;
+                                                                })()}
                                                                 <span className="text-xs font-bold text-white">{userSchedule.start_time}</span>
                                                                 <span className="text-xs font-bold text-white/80">{userSchedule.end_time}</span>
                                                                 {(currentUser.role === 'admin' || currentUser.role === 'manager') && (
@@ -740,6 +757,24 @@ export default function UserManagement({ currentUser }: { currentUser: any }) {
                                             </button>
                                         ))}
                                     </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-sm text-slate-400">Patrón de Fin de Semana (Opcional)</label>
+                                    <select
+                                        value={bulkForm.weekend_pattern}
+                                        onChange={e => setBulkForm({ ...bulkForm, weekend_pattern: e.target.value })}
+                                        className="input-premium w-full text-white"
+                                    >
+                                        <option value="">Ninguno (Usar hora fija)</option>
+                                        <option value="ACA">ACA (Vie A - Sáb C - Dom A)</option>
+                                        <option value="CAC">CAC (Vie C - Sáb A - Dom C)</option>
+                                        <option value="ACA_ROTATING">Rotativo (Semana 1: ACA, Semana 2: CAC...)</option>
+                                        <option value="CAC_ROTATING">Rotativo (Semana 1: CAC, Semana 2: ACA...)</option>
+                                    </select>
+                                    <p className="text-[10px] text-slate-500">
+                                        * Si seleccionas un patrón, las horas de Viernes, Sábado y Domingo se ajustarán automáticamente.
+                                    </p>
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4">

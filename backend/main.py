@@ -290,11 +290,50 @@ def create_bulk_schedule(bulk_data: schemas.BulkScheduleCreate, db: Session = De
         current_date_iter = start_date
         created_count = 0
         
+        # Define Shift Times
+        TIME_T_START, TIME_T_END = "10:00", "20:00"
+        TIME_A_START, TIME_A_END = "10:00", "17:30"
+        TIME_C_START, TIME_C_END = "12:30", "20:00"
+        
         while current_date_iter <= end_date:
-            # Check if current day of week (0=Monday, 6=Sunday) is in selected days
-            if current_date_iter.weekday() in bulk_data.days_of_week:
-                # Check if schedule already exists for this user and date
-                # Important: models.Schedule.date is a Date column, so we compare with date object
+            weekday = current_date_iter.weekday() # 0=Monday, 6=Sunday
+            
+            should_create = False
+            s_start = bulk_data.start_time
+            s_end = bulk_data.end_time
+            
+            # Logic for Weekend Patterns
+            if bulk_data.weekend_pattern and weekday in [4, 5, 6] : # Fri, Sat, Sun
+                should_create = True
+                week_num = current_date_iter.isocalendar()[1]
+                is_even_week = week_num % 2 == 0
+                
+                # Determine base pattern
+                pattern_type = bulk_data.weekend_pattern # ACA, CAC, ACA_ROTATING, CAC_ROTATING
+                
+                # Resolve rotating patterns to fixed base pattern for this specific week
+                if pattern_type == "ACA_ROTATING":
+                    pattern_type = "ACA" if not is_even_week else "CAC"
+                elif pattern_type == "CAC_ROTATING":
+                    pattern_type = "CAC" if not is_even_week else "ACA"
+                    
+                # Apply Base Pattern logic
+                if pattern_type == "ACA":
+                    # Fri(4)=A, Sat(5)=C, Sun(6)=A
+                    if weekday == 4: s_start, s_end = TIME_A_START, TIME_A_END
+                    elif weekday == 5: s_start, s_end = TIME_C_START, TIME_C_END
+                    elif weekday == 6: s_start, s_end = TIME_A_START, TIME_A_END
+                elif pattern_type == "CAC":
+                    # Fri(4)=C, Sat(5)=A, Sun(6)=C
+                    if weekday == 4: s_start, s_end = TIME_C_START, TIME_C_END
+                    elif weekday == 5: s_start, s_end = TIME_A_START, TIME_A_END
+                    elif weekday == 6: s_start, s_end = TIME_C_START, TIME_C_END
+                    
+            # Logic for Regular Days (or weekends if no pattern active)
+            elif weekday in bulk_data.days_of_week:
+                should_create = True
+                
+            if should_create:
                 existing = db.query(models.Schedule).filter(
                     models.Schedule.user_id == bulk_data.user_id,
                     models.Schedule.date == current_date_iter
@@ -303,9 +342,9 @@ def create_bulk_schedule(bulk_data: schemas.BulkScheduleCreate, db: Session = De
                 if not existing:
                     new_schedule = models.Schedule(
                         user_id=bulk_data.user_id,
-                        date=current_date_iter,  # Pass date object
-                        start_time=bulk_data.start_time,
-                        end_time=bulk_data.end_time
+                        date=current_date_iter,
+                        start_time=s_start,
+                        end_time=s_end
                     )
                     db.add(new_schedule)
                     created_count += 1
