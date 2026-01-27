@@ -14,6 +14,31 @@ models.Base.metadata.create_all(bind=database.engine)
 
 app = FastAPI(title="DinoCars API")
 
+# Auto-Seed Admin on Startup (for ephemeral DBs like Render SQLite)
+@app.on_event("startup")
+def startup_event():
+    db = database.SessionLocal()
+    try:
+        # Check if admin exists
+        admin = db.query(models.User).filter(models.User.role == "admin").first()
+        if not admin:
+            print("WARNING: No admin found. Seeding default admin user.")
+            hashed_pw = auth.get_password_hash("admin123") # Default password
+            admin_user = models.User(
+                username="admin", 
+                hashed_password=hashed_pw, 
+                role="admin",
+                default_start_time="09:00",
+                default_end_time="18:00"
+            )
+            db.add(admin_user)
+            db.commit()
+            print("Admin user seeded successfully.")
+    except Exception as e:
+        print(f"Error seeding admin: {e}")
+    finally:
+        db.close()
+
 # CORS
 origins = [
     "http://localhost:3000",
