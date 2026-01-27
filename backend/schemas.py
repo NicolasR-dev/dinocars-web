@@ -91,3 +91,16 @@ class VueltasCalculationRequest(BaseModel):
 class VueltasCalculationResponse(BaseModel):
     total_today: int
     rides_today: int
+
+# Dashboard Schemas
+class DailyStats(BaseModel):
+    date: str
+    total_income: float
+    total_rides: int
+
+class DashboardStats(BaseModel):
+    total_revenue: float
+    total_rides: int
+    records_count: int
+    average_daily_income: float
+    daily_stats: List[DailyStats]

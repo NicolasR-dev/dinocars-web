@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { User, Plus, Trash2, Calendar, Clock, Save, X, Edit, ChevronLeft, ChevronRight } from 'lucide-react';
 import api from '@/lib/api';
 import MonthlyScheduleView from './MonthlyScheduleView';
+import AdminDashboard from './AdminDashboard';
+import { BarChart3 } from 'lucide-react';
 
 const DAYS_ES = {
     'Monday': 'Lunes',
@@ -44,6 +46,7 @@ export default function UserManagement({ currentUser }: { currentUser: any }) {
     const [selectedUserForSchedule, setSelectedUserForSchedule] = useState<any>(null);
     const [newSchedule, setNewSchedule] = useState({ date: '', start_time: '09:00', end_time: '18:00' });
     const [viewMode, setViewMode] = useState<'weekly' | 'monthly'>('weekly');
+    const [activeTab, setActiveTab] = useState<'schedule' | 'dashboard'>('schedule');
 
     // Date Navigation
     const [currentWeekStart, setCurrentWeekStart] = useState(getMonday(new Date()));
@@ -242,159 +245,198 @@ export default function UserManagement({ currentUser }: { currentUser: any }) {
                 )}
             </div>
 
-            {/* Global Visual Schedule */}
-            <div className="glass p-6 rounded-xl border border-slate-700 overflow-x-auto">
-                <div className="flex justify-between items-center mb-4 min-w-[800px]">
-                    <h4 className="text-lg font-bold text-white flex items-center gap-2">
-                        <Calendar className="text-cyan-400" />
-                        Horario Global
-                    </h4>
-                    <div className="flex items-center gap-4">
-                        {viewMode === 'weekly' && (
-                            <div className="flex items-center gap-2 bg-slate-800 rounded-lg p-1">
-                                <button onClick={() => changeWeek(-1)} className="p-1 hover:bg-white/10 rounded transition-colors">
-                                    <ChevronLeft className="w-4 h-4 text-slate-400" />
-                                </button>
-                                <span className="text-xs font-bold text-slate-300 px-2">
-                                    {currentWeekStart.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} -
-                                    {new Date(new Date(currentWeekStart).setDate(currentWeekStart.getDate() + 6)).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
-                                </span>
-                                <button onClick={() => changeWeek(1)} className="p-1 hover:bg-white/10 rounded transition-colors">
-                                    <ChevronRight className="w-4 h-4 text-slate-400" />
-                                </button>
-                            </div>
+            {/* Admin Tabs */}
+            {currentUser.role === 'admin' && (
+                <div className="flex gap-4 border-b border-slate-700 mb-6">
+                    <button
+                        onClick={() => setActiveTab('schedule')}
+                        className={`pb-2 px-4 text-sm font-medium transition-colors relative ${activeTab === 'schedule' ? 'text-indigo-400' : 'text-slate-400 hover:text-white'
+                            }`}
+                    >
+                        Gestión de Horarios
+                        {activeTab === 'schedule' && (
+                            <motion.div layoutId="tab-underline" className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-500" />
                         )}
-                        <div className="flex bg-slate-800 rounded-lg p-1">
-                            <button
-                                onClick={() => setViewMode('weekly')}
-                                className={`px-3 py-1 text-xs rounded-md transition-colors ${viewMode === 'weekly' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}
-                            >
-                                Semanal
-                            </button>
-                            <button
-                                onClick={() => setViewMode('monthly')}
-                                className={`px-3 py-1 text-xs rounded-md transition-colors ${viewMode === 'monthly' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}
-                            >
-                                Mensual
-                            </button>
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('dashboard')}
+                        className={`pb-2 px-4 text-sm font-medium transition-colors relative ${activeTab === 'dashboard' ? 'text-indigo-400' : 'text-slate-400 hover:text-white'
+                            }`}
+                    >
+                        <div className="flex items-center gap-2">
+                            <BarChart3 className="w-4 h-4" />
+                            Dashboard & Estadísticas
                         </div>
-                    </div>
+                        {activeTab === 'dashboard' && (
+                            <motion.div layoutId="tab-underline" className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-500" />
+                        )}
+                    </button>
                 </div>
+            )}
 
-                {viewMode === 'weekly' ? (
-                    <div className="min-w-[800px]">
-                        {/* Grid Header */}
-                        <div className="grid grid-cols-8 gap-1 mb-2">
-                            <div className="p-2 text-xs font-bold text-slate-500 uppercase">Usuario</div>
-                            {weekDates.map(date => {
-                                const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
-                                const isToday = date.toDateString() === new Date().toDateString();
-                                return (
-                                    <div key={date.toISOString()} className={`text-center py-2 rounded-lg border ${isToday ? 'bg-indigo-500/20 border-indigo-500/50' : 'bg-slate-800/50 border-slate-700'}`}>
-                                        <span className="text-[10px] font-bold text-slate-400 block uppercase">{(DAYS_ES as any)[dayName].substring(0, 3)}</span>
-                                        <span className="text-sm font-bold text-white">{date.getDate()}</span>
+            {activeTab === 'dashboard' ? (
+                <AdminDashboard />
+            ) : (
+                <>
+
+                    {/* Global Visual Schedule */}
+                    <div className="glass p-6 rounded-xl border border-slate-700 overflow-x-auto">
+                        <div className="flex justify-between items-center mb-4 min-w-[800px]">
+                            <h4 className="text-lg font-bold text-white flex items-center gap-2">
+                                <Calendar className="text-cyan-400" />
+                                Horario Global
+                            </h4>
+                            <div className="flex items-center gap-4">
+                                {viewMode === 'weekly' && (
+                                    <div className="flex items-center gap-2 bg-slate-800 rounded-lg p-1">
+                                        <button onClick={() => changeWeek(-1)} className="p-1 hover:bg-white/10 rounded transition-colors">
+                                            <ChevronLeft className="w-4 h-4 text-slate-400" />
+                                        </button>
+                                        <span className="text-xs font-bold text-slate-300 px-2">
+                                            {currentWeekStart.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} -
+                                            {new Date(new Date(currentWeekStart).setDate(currentWeekStart.getDate() + 6)).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                                        </span>
+                                        <button onClick={() => changeWeek(1)} className="p-1 hover:bg-white/10 rounded transition-colors">
+                                            <ChevronRight className="w-4 h-4 text-slate-400" />
+                                        </button>
                                     </div>
-                                );
-                            })}
+                                )}
+                                <div className="flex bg-slate-800 rounded-lg p-1">
+                                    <button
+                                        onClick={() => setViewMode('weekly')}
+                                        className={`px-3 py-1 text-xs rounded-md transition-colors ${viewMode === 'weekly' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                                    >
+                                        Semanal
+                                    </button>
+                                    <button
+                                        onClick={() => setViewMode('monthly')}
+                                        className={`px-3 py-1 text-xs rounded-md transition-colors ${viewMode === 'monthly' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                                    >
+                                        Mensual
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
-                        {/* Grid Rows */}
-                        <div className="space-y-1">
-                            {users.filter(user => user.role !== 'admin').map(user => (
-                                <div key={user.id} className="grid grid-cols-8 gap-1 items-center">
-                                    {/* User Info */}
-                                    <div className="p-2 bg-slate-800/30 rounded-lg border border-slate-700/50 h-full flex flex-col justify-center">
-                                        <span className="font-bold text-sm text-white truncate">{user.username}</span>
-                                        <span className="text-[10px] text-slate-400">{getUserTotalHours(user.schedules || []).toFixed(1)}h</span>
-                                    </div>
-
-                                    {/* Days */}
+                        {viewMode === 'weekly' ? (
+                            <div className="min-w-[800px]">
+                                {/* Grid Header */}
+                                <div className="grid grid-cols-8 gap-1 mb-2">
+                                    <div className="p-2 text-xs font-bold text-slate-500 uppercase">Usuario</div>
                                     {weekDates.map(date => {
-                                        const dateStr = date.toISOString().split('T')[0];
-                                        const userSchedule = schedules.find(s => s.user.id === user.id && s.date === dateStr);
-
+                                        const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
+                                        const isToday = date.toDateString() === new Date().toDateString();
                                         return (
-                                            <div
-                                                key={`${user.id}-${dateStr}`}
-                                                className={`h-12 rounded-lg border transition-all relative group ${userSchedule
-                                                    ? `${user.color} border-white/10`
-                                                    : 'bg-slate-800/20 border-slate-700/30 hover:bg-slate-800/50 cursor-pointer'}`}
-                                                onClick={() => {
-                                                    if (!userSchedule && (currentUser.role === 'admin' || currentUser.role === 'manager')) {
-                                                        console.log('Selected User:', user); // DEBUG
-                                                        setSelectedUserForSchedule(user);
-                                                        setNewSchedule({
-                                                            date: dateStr,
-                                                            start_time: user.default_start_time || '09:00',
-                                                            end_time: user.default_end_time || '18:00'
-                                                        });
-                                                    }
-                                                }}
-                                            >
-                                                {userSchedule ? (
-                                                    <div className="h-full flex flex-col items-center justify-center p-1">
-                                                        <span className="text-xs font-bold text-white">{userSchedule.start_time}</span>
-                                                        <span className="text-xs font-bold text-white/80">{userSchedule.end_time}</span>
-                                                        {(currentUser.role === 'admin' || currentUser.role === 'manager') && (
-                                                            <button
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    handleDeleteSchedule(userSchedule.id);
-                                                                }}
-                                                                className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
-                                                            >
-                                                                <X className="w-3 h-3" />
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                ) : (
-                                                    (currentUser.role === 'admin' || currentUser.role === 'manager') && (
-                                                        <div className="h-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            <Plus className="w-4 h-4 text-slate-500" />
-                                                        </div>
-                                                    )
-                                                )}
+                                            <div key={date.toISOString()} className={`text-center py-2 rounded-lg border ${isToday ? 'bg-indigo-500/20 border-indigo-500/50' : 'bg-slate-800/50 border-slate-700'}`}>
+                                                <span className="text-[10px] font-bold text-slate-400 block uppercase">{(DAYS_ES as any)[dayName].substring(0, 3)}</span>
+                                                <span className="text-sm font-bold text-white">{date.getDate()}</span>
                                             </div>
                                         );
                                     })}
                                 </div>
-                            ))}
-                        </div>
-                    </div>
-                ) : (
-                    <MonthlyScheduleView schedules={schedules} />
-                )}
-            </div>
 
-            {/* User List (Admin Only for Editing Users) */}
-            {currentUser.role === 'admin' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {users.map((user: any) => (
-                        <div key={user.id} className="glass p-4 rounded-xl border border-slate-700 hover:border-indigo-500/50 transition-colors relative overflow-hidden">
-                            <div className={`absolute top-0 left-0 w-1 h-full ${user.color}`}></div>
-                            <div className="flex justify-between items-center pl-3">
-                                <div>
-                                    <h4 className="font-bold text-white">{user.username}</h4>
-                                    <span className={`text-xs px-2 py-0.5 rounded-full uppercase font-bold ${user.role === 'admin' ? 'bg-purple-500/20 text-purple-400' :
-                                        user.role === 'manager' ? 'bg-cyan-500/20 text-cyan-400' :
-                                            'bg-slate-500/20 text-slate-400'
-                                        }`}>
-                                        {user.role}
-                                    </span>
-                                </div>
-                                <div className="flex gap-1">
-                                    <button onClick={() => openEditUser(user)} className="p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
-                                        <Edit className="w-4 h-4" />
-                                    </button>
-                                    <button onClick={() => handleDeleteUser(user.id)} className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors">
-                                        <Trash2 className="w-4 h-4" />
-                                    </button>
+                                {/* Grid Rows */}
+                                <div className="space-y-1">
+                                    {users.filter(user => user.role !== 'admin').map(user => (
+                                        <div key={user.id} className="grid grid-cols-8 gap-1 items-center">
+                                            {/* User Info */}
+                                            <div className="p-2 bg-slate-800/30 rounded-lg border border-slate-700/50 h-full flex flex-col justify-center">
+                                                <span className="font-bold text-sm text-white truncate">{user.username}</span>
+                                                <span className="text-[10px] text-slate-400">{getUserTotalHours(user.schedules || []).toFixed(1)}h</span>
+                                            </div>
+
+                                            {/* Days */}
+                                            {weekDates.map(date => {
+                                                const dateStr = date.toISOString().split('T')[0];
+                                                const userSchedule = schedules.find(s => s.user.id === user.id && s.date === dateStr);
+
+                                                return (
+                                                    <div
+                                                        key={`${user.id}-${dateStr}`}
+                                                        className={`h-12 rounded-lg border transition-all relative group ${userSchedule
+                                                            ? `${user.color} border-white/10`
+                                                            : 'bg-slate-800/20 border-slate-700/30 hover:bg-slate-800/50 cursor-pointer'}`}
+                                                        onClick={() => {
+                                                            if (!userSchedule && (currentUser.role === 'admin' || currentUser.role === 'manager')) {
+                                                                console.log('Selected User:', user); // DEBUG
+                                                                setSelectedUserForSchedule(user);
+                                                                setNewSchedule({
+                                                                    date: dateStr,
+                                                                    start_time: user.default_start_time || '09:00',
+                                                                    end_time: user.default_end_time || '18:00'
+                                                                });
+                                                            }
+                                                        }}
+                                                    >
+                                                        {userSchedule ? (
+                                                            <div className="h-full flex flex-col items-center justify-center p-1">
+                                                                <span className="text-xs font-bold text-white">{userSchedule.start_time}</span>
+                                                                <span className="text-xs font-bold text-white/80">{userSchedule.end_time}</span>
+                                                                {(currentUser.role === 'admin' || currentUser.role === 'manager') && (
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            handleDeleteSchedule(userSchedule.id);
+                                                                        }}
+                                                                        className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                                                                    >
+                                                                        <X className="w-3 h-3" />
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        ) : (
+                                                            (currentUser.role === 'admin' || currentUser.role === 'manager') && (
+                                                                <div className="h-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                    <Plus className="w-4 h-4 text-slate-500" />
+                                                                </div>
+                                                            )
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
+                        ) : (
+                            <MonthlyScheduleView schedules={schedules} />
+                        )}
+                    </div>
+
+                    {/* User List (Admin Only for Editing Users) */}
+                    {currentUser.role === 'admin' && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {users.map((user: any) => (
+                                <div key={user.id} className="glass p-4 rounded-xl border border-slate-700 hover:border-indigo-500/50 transition-colors relative overflow-hidden">
+                                    <div className={`absolute top-0 left-0 w-1 h-full ${user.color}`}></div>
+                                    <div className="flex justify-between items-center pl-3">
+                                        <div>
+                                            <h4 className="font-bold text-white">{user.username}</h4>
+                                            <span className={`text-xs px-2 py-0.5 rounded-full uppercase font-bold ${user.role === 'admin' ? 'bg-purple-500/20 text-purple-400' :
+                                                user.role === 'manager' ? 'bg-cyan-500/20 text-cyan-400' :
+                                                    'bg-slate-500/20 text-slate-400'
+                                                }`}>
+                                                {user.role}
+                                            </span>
+                                        </div>
+                                        <div className="flex gap-1">
+                                            <button onClick={() => openEditUser(user)} className="p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
+                                                <Edit className="w-4 h-4" />
+                                            </button>
+                                            <button onClick={() => handleDeleteUser(user.id)} className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors">
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
-                    ))}
-                </div>
-            )}
+                    )}
+                </>
+            )
+            }
+
+            {/* User Create/Edit Modal */}
 
             {/* User Create/Edit Modal */}
             <AnimatePresence>
@@ -609,6 +651,6 @@ export default function UserManagement({ currentUser }: { currentUser: any }) {
                     </div>
                 )}
             </AnimatePresence>
-        </div>
+        </div >
     );
 }

@@ -161,6 +161,50 @@ def startup_event():
 
     threading.Thread(target=keep_alive, daemon=True).start()
 
+
+@app.get("/admin/dashboard-stats", response_model=schemas.DashboardStats)
+def get_dashboard_stats(db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_active_admin)):
+    # Fetch all records sorted by date
+    records = db.query(models.DailyRecord).order_by(models.DailyRecord.date.asc()).all()
+    
+    total_revenue = 0.0
+    total_rides = 0
+    records_count = len(records)
+    daily_stats = []
+    
+    # Process last 30 days for the chart
+    # If we have many records, we might want to limit the daily_stats to the last 30 entries
+    # But for "total_revenue" we likely want the lifetime or YTD. 
+    # Let's assume lifetime for totals, and last 30 records for the chart.
+    
+    for record in records:
+        # Use daily_cash_generated or total_counted? 
+        # daily_cash_generated seems to be the calculated property for that day's income
+        income = record.daily_cash_generated or 0.0
+        rides = record.effective_rides or 0
+        
+        total_revenue += income
+        total_rides += rides
+        
+    average_daily_income = total_revenue / records_count if records_count > 0 else 0
+    
+    # helper for last 30 days
+    recent_records = records[-30:] if records_count > 30 else records
+    for record in recent_records:
+        daily_stats.append(schemas.DailyStats(
+            date=record.date,
+            total_income=record.daily_cash_generated or 0.0,
+            total_rides=record.effective_rides or 0
+        ))
+        
+    return {
+        "total_revenue": total_revenue,
+        "total_rides": total_rides,
+        "records_count": records_count,
+        "average_daily_income": average_daily_income,
+        "daily_stats": daily_stats
+    }
+
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
