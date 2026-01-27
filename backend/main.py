@@ -1,6 +1,7 @@
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
+from jose import jwt
 from sqlalchemy.orm import Session
 from typing import List
 import pandas as pd
@@ -457,3 +458,34 @@ def delete_schedule(schedule_id: int, db: Session = Depends(get_db), current_use
     db.delete(schedule)
     db.commit()
     return {"ok": True}
+
+@app.get("/debug-token")
+def debug_token(request: Request, db: Session = Depends(get_db)):
+    auth_header = request.headers.get("Authorization")
+    if not auth_header:
+        return {"status": "error", "message": "No Authorization header found"}
+    
+    try:
+        scheme, token = auth_header.split()
+        if scheme.lower() != "bearer":
+            return {"status": "error", "message": "Scheme is not Bearer"}
+            
+        payload = jwt.decode(token, auth.SECRET_KEY, algorithms=[auth.ALGORITHM])
+        username = payload.get("sub")
+        role = payload.get("role")
+        exp = payload.get("exp")
+        
+        user = db.query(models.User).filter(models.User.username == username).first()
+        user_found = user is not None
+        
+        return {
+            "status": "ok",
+            "decoded_username": username,
+            "decoded_role": role,
+            "token_exp": datetime.fromtimestamp(exp) if exp else None,
+            "server_time": datetime.utcnow(),
+            "user_found_in_db": user_found,
+            "user_role_in_db": user.role if user else None
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e), "type": str(type(e))}
