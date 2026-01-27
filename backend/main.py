@@ -205,15 +205,6 @@ def startup_event():
 
 @app.get("/admin/dashboard-stats", response_model=schemas.DashboardStats)
 def get_dashboard_stats(db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_active_admin)):
-    records = db.query(models.DailyRecord).order_by(models.DailyRecord.date.asc()).all()
-    
-    total_revenue = 0.0
-    total_rides = 0
-    records_count = len(records)
-    daily_stats = []
-    
-@app.get("/admin/dashboard-stats", response_model=schemas.DashboardStats)
-def get_dashboard_stats(db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_active_admin)):
     try:
         records = db.query(models.DailyRecord).order_by(models.DailyRecord.date.asc()).all()
         
