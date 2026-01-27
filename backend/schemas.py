@@ -104,3 +104,13 @@ class DashboardStats(BaseModel):
     records_count: int
     average_daily_income: float
     daily_stats: List[DailyStats]
+    sales_by_weekday: List[dict] # { day: str, amount: float }
+    top_workers: List[dict] # { name: str, total_rides: int, total_generated: float }
+
+class BulkScheduleCreate(BaseModel):
+    user_id: int
+    start_date: str # YYYY-MM-DD
+    end_date: str # YYYY-MM-DD
+    days_of_week: List[int] # 0=Monday, 6=Sunday
+    start_time: str
+    end_time: str

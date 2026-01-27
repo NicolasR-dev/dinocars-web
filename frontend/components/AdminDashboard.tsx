@@ -5,9 +5,9 @@ import api from '@/lib/api';
 import { motion } from 'framer-motion';
 import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-    AreaChart, Area
+    AreaChart, Area, BarChart, Bar, Cell
 } from 'recharts';
-import { DollarSign, Activity, TrendingUp, Calendar } from 'lucide-react';
+import { DollarSign, Activity, TrendingUp, Calendar, Trophy } from 'lucide-react';
 
 interface DailyStats {
     date: string;
@@ -21,7 +21,11 @@ interface DashboardStats {
     records_count: number;
     average_daily_income: number;
     daily_stats: DailyStats[];
+    sales_by_weekday: { day: string, amount: number }[];
+    top_workers: { name: string, total_rides: number, total_generated: number }[];
 }
+
+const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4', '#ef4444'];
 
 export default function AdminDashboard() {
     const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -149,6 +153,83 @@ export default function AdminDashboard() {
                                 />
                             </LineChart>
                         </ResponsiveContainer>
+                    </div>
+                </div>
+            </div>
+
+            {/* Advanced Stats Section */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-10">
+                {/* Sales by Weekday */}
+                <div className="card-glass p-6">
+                    <h3 className="text-xl font-bold text-white mb-6">Ventas por Día de la Semana</h3>
+                    <div className="h-[300px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={stats.sales_by_weekday}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                                <XAxis
+                                    dataKey="day"
+                                    stroke="#94a3b8"
+                                    fontSize={12}
+                                    tickFormatter={(val) => {
+                                        const map: any = { 'Monday': 'Lun', 'Tuesday': 'Mar', 'Wednesday': 'Mié', 'Thursday': 'Jue', 'Friday': 'Vie', 'Saturday': 'Sáb', 'Sunday': 'Dom' };
+                                        return map[val] || val;
+                                    }}
+                                />
+                                <YAxis
+                                    stroke="#94a3b8"
+                                    fontSize={12}
+                                    tickFormatter={(val) => `$${val / 1000}k`}
+                                />
+                                <Tooltip
+                                    cursor={{ fill: '#334155', opacity: 0.2 }}
+                                    contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#fff' }}
+                                    formatter={(value: any) => [`$${value.toLocaleString('es-CL')}`, 'Venta Total']}
+                                />
+                                <Bar dataKey="amount" radius={[4, 4, 0, 0]}>
+                                    {stats.sales_by_weekday.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                    ))}
+                                </Bar>
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+
+                {/* Worker Ranking */}
+                <div className="card-glass p-6">
+                    <div className="flex items-center justify-between mb-6">
+                        <h3 className="text-xl font-bold text-white">Ranking de Trabajadores</h3>
+                        <Trophy className="text-yellow-400" />
+                    </div>
+
+                    <div className="space-y-4 overflow-y-auto max-h-[300px] pr-2 custom-scrollbar">
+                        {stats.top_workers.length === 0 ? (
+                            <div className="text-center text-slate-500 py-10">No hay datos suficientes</div>
+                        ) : (
+                            stats.top_workers.map((worker, idx) => (
+                                <div key={idx} className="flex items-center justify-between p-4 bg-slate-800/50 rounded-xl border border-slate-700/50 hover:border-slate-500 transition-colors">
+                                    <div className="flex items-center gap-4">
+                                        <div className={`
+                                            w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm
+                                            ${idx === 0 ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/50' :
+                                                idx === 1 ? 'bg-slate-400/20 text-slate-300 border border-slate-400/50' :
+                                                    idx === 2 ? 'bg-amber-700/20 text-amber-600 border border-amber-700/50' :
+                                                        'bg-slate-800 text-slate-500'}
+                                        `}>
+                                            {idx + 1}
+                                        </div>
+                                        <div>
+                                            <p className="font-bold text-white">{worker.name}</p>
+                                            <p className="text-xs text-slate-400">{worker.total_rides} vueltas vendidas</p>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="font-bold text-emerald-400">${worker.total_generated.toLocaleString('es-CL')}</p>
+                                        <p className="text-xs text-slate-500">Generado</p>
+                                    </div>
+                                </div>
+                            ))
+                        )}
                     </div>
                 </div>
             </div>

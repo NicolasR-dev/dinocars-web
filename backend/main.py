@@ -164,7 +164,6 @@ def startup_event():
 
 @app.get("/admin/dashboard-stats", response_model=schemas.DashboardStats)
 def get_dashboard_stats(db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_active_admin)):
-    # Fetch all records sorted by date
     records = db.query(models.DailyRecord).order_by(models.DailyRecord.date.asc()).all()
     
     total_revenue = 0.0
@@ -172,23 +171,34 @@ def get_dashboard_stats(db: Session = Depends(get_db), current_user: models.User
     records_count = len(records)
     daily_stats = []
     
-    # Process last 30 days for the chart
-    # If we have many records, we might want to limit the daily_stats to the last 30 entries
-    # But for "total_revenue" we likely want the lifetime or YTD. 
-    # Let's assume lifetime for totals, and last 30 records for the chart.
-    
+    # New Aggregations
+    sales_by_weekday = {day: 0.0 for day in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]}
+    worker_stats = {} # { name: { rides: 0, revenue: 0 } }
+
     for record in records:
-        # Use daily_cash_generated or total_counted? 
-        # daily_cash_generated seems to be the calculated property for that day's income
         income = record.daily_cash_generated or 0.0
         rides = record.effective_rides or 0
         
         total_revenue += income
         total_rides += rides
         
+        # Weekday Analysis
+        try:
+            date_obj = datetime.strptime(record.date, "%Y-%m-%d")
+            day_name = date_obj.strftime("%A")
+            sales_by_weekday[day_name] += income
+        except:
+            pass
+            
+        # Worker Analysis
+        if record.worker_name:
+            if record.worker_name not in worker_stats:
+                worker_stats[record.worker_name] = {"rides": 0, "revenue": 0}
+            worker_stats[record.worker_name]["rides"] += rides
+            worker_stats[record.worker_name]["revenue"] += income
+
     average_daily_income = total_revenue / records_count if records_count > 0 else 0
     
-    # helper for last 30 days
     recent_records = records[-30:] if records_count > 30 else records
     for record in recent_records:
         daily_stats.append(schemas.DailyStats(
@@ -196,14 +206,61 @@ def get_dashboard_stats(db: Session = Depends(get_db), current_user: models.User
             total_income=record.daily_cash_generated or 0.0,
             total_rides=record.effective_rides or 0
         ))
-        
+    
+    # Format Response Lists
+    sales_by_weekday_list = [{"day": k, "amount": v} for k, v in sales_by_weekday.items()]
+    
+    top_workers_list = [
+        {"name": k, "total_rides": v["rides"], "total_generated": v["revenue"]} 
+        for k, v in worker_stats.items()
+    ]
+    # Sort top workers by revenue
+    top_workers_list.sort(key=lambda x: x["total_generated"], reverse=True)
+
     return {
         "total_revenue": total_revenue,
         "total_rides": total_rides,
         "records_count": records_count,
         "average_daily_income": average_daily_income,
-        "daily_stats": daily_stats
+        "daily_stats": daily_stats,
+        "sales_by_weekday": sales_by_weekday_list,
+        "top_workers": top_workers_list
     }
+
+@app.post("/schedules/bulk")
+def create_bulk_schedule(bulk_data: schemas.BulkScheduleCreate, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_active_admin)):
+    start_date = datetime.strptime(bulk_data.start_date, "%Y-%m-%d")
+    end_date = datetime.strptime(bulk_data.end_date, "%Y-%m-%d")
+    
+    current_date = start_date
+    created_count = 0
+    
+    while current_date <= end_date:
+        # Check if day of week matches (0=Monday)
+        if current_date.weekday() in bulk_data.days_of_week:
+            date_str = current_date.strftime("%Y-%m-%d")
+            
+            # Check if schedule already exists
+            existing = db.query(models.Schedule).filter(
+                models.Schedule.user_id == bulk_data.user_id,
+                models.Schedule.date == date_str # Schedule.date is Date type in model but string in schema? 
+                # Model says Date, let's pass date object
+            ).first()
+            
+            if not existing:
+                new_schedule = models.Schedule(
+                    user_id=bulk_data.user_id,
+                    date=current_date.date(),
+                    start_time=bulk_data.start_time,
+                    end_time=bulk_data.end_time
+                )
+                db.add(new_schedule)
+                created_count += 1
+                
+        current_date += timedelta(days=1)
+    
+    db.commit()
+    return {"message": f"Successfully created {created_count} shifts"}
 
 @app.get("/health")
 def health_check():

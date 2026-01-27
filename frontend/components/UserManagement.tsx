@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, Plus, Trash2, Calendar, Clock, Save, X, Edit, ChevronLeft, ChevronRight } from 'lucide-react';
+import { User, Plus, Trash2, Calendar, Clock, Save, X, Edit, ChevronLeft, ChevronRight, Wand2 } from 'lucide-react';
 import api from '@/lib/api';
 import MonthlyScheduleView from './MonthlyScheduleView';
 import AdminDashboard from './AdminDashboard';
@@ -47,6 +47,17 @@ export default function UserManagement({ currentUser }: { currentUser: any }) {
     const [newSchedule, setNewSchedule] = useState({ date: '', start_time: '09:00', end_time: '18:00' });
     const [viewMode, setViewMode] = useState<'weekly' | 'monthly'>('weekly');
     const [activeTab, setActiveTab] = useState<'schedule' | 'dashboard'>('schedule');
+
+    // Bulk Schedule State
+    const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
+    const [bulkForm, setBulkForm] = useState({
+        user_id: '',
+        start_date: '',
+        end_date: '',
+        days_of_week: [0, 1, 2, 3, 4], // Mon-Fri default
+        start_time: '10:00',
+        end_time: '18:00'
+    });
 
     // Date Navigation
     const [currentWeekStart, setCurrentWeekStart] = useState(getMonday(new Date()));
@@ -233,7 +244,13 @@ export default function UserManagement({ currentUser }: { currentUser: any }) {
                 </h3>
                 {currentUser.role === 'admin' && (
                     <div className="flex gap-2">
-
+                        <button
+                            onClick={() => setIsBulkModalOpen(true)}
+                            className="btn-glass flex items-center gap-2 px-4 py-2 text-sm text-cyan-400 border-cyan-500/30 hover:bg-cyan-500/10"
+                        >
+                            <Wand2 className="w-4 h-4" />
+                            Autoprogramar
+                        </button>
                         <button
                             onClick={openCreateUser}
                             className="btn-primary flex items-center gap-2 px-4 py-2 text-sm"
@@ -645,6 +662,129 @@ export default function UserManagement({ currentUser }: { currentUser: any }) {
                                 <div className="flex justify-end gap-3 mt-6">
                                     <button onClick={() => setSelectedUserForSchedule(null)} className="px-4 py-2 text-slate-400 hover:text-white">Cancelar</button>
                                     <button onClick={handleAddSchedule} className="btn-primary px-6 py-2">Agregar Turno</button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+            {/* Bulk Schedule Modal */}
+            <AnimatePresence>
+                {isBulkModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md p-6 shadow-2xl"
+                        >
+                            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                <Wand2 className="text-purple-400" />
+                                Autoprogramación Mágica
+                            </h3>
+
+                            <div className="space-y-4">
+                                <div className="space-y-2">
+                                    <label className="text-sm text-slate-400">Usuario</label>
+                                    <select
+                                        value={bulkForm.user_id}
+                                        onChange={e => setBulkForm({ ...bulkForm, user_id: e.target.value })}
+                                        className="input-premium w-full text-white"
+                                    >
+                                        <option value="">Seleccionar Trabajador...</option>
+                                        {users.filter(u => u.role !== 'admin').map(u => (
+                                            <option key={u.id} value={u.id}>{u.username}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <label className="text-sm text-slate-400">Desde</label>
+                                        <input
+                                            type="date"
+                                            value={bulkForm.start_date}
+                                            onChange={e => setBulkForm({ ...bulkForm, start_date: e.target.value })}
+                                            className="input-premium w-full text-white"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-sm text-slate-400">Hasta</label>
+                                        <input
+                                            type="date"
+                                            value={bulkForm.end_date}
+                                            onChange={e => setBulkForm({ ...bulkForm, end_date: e.target.value })}
+                                            className="input-premium w-full text-white"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-sm text-slate-400">Días de la semana</label>
+                                    <div className="flex gap-1 justify-between bg-slate-800 p-2 rounded-lg">
+                                        {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map((day, idx) => (
+                                            <button
+                                                key={idx}
+                                                onClick={() => {
+                                                    const newDays = bulkForm.days_of_week.includes(idx)
+                                                        ? bulkForm.days_of_week.filter(d => d !== idx)
+                                                        : [...bulkForm.days_of_week, idx];
+                                                    setBulkForm({ ...bulkForm, days_of_week: newDays });
+                                                }}
+                                                className={`w-8 h-8 rounded-full text-xs font-bold transition-all ${bulkForm.days_of_week.includes(idx)
+                                                    ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/20'
+                                                    : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
+                                                    }`}
+                                            >
+                                                {day}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <label className="text-sm text-slate-400">Inicio</label>
+                                        <input
+                                            type="time"
+                                            value={bulkForm.start_time}
+                                            onChange={e => setBulkForm({ ...bulkForm, start_time: e.target.value })}
+                                            className="input-premium w-full text-white"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-sm text-slate-400">Fin</label>
+                                        <input
+                                            type="time"
+                                            value={bulkForm.end_time}
+                                            onChange={e => setBulkForm({ ...bulkForm, end_time: e.target.value })}
+                                            className="input-premium w-full text-white"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-end gap-3 mt-6">
+                                    <button onClick={() => setIsBulkModalOpen(false)} className="px-4 py-2 text-slate-400 hover:text-white">Cancelar</button>
+                                    <button
+                                        onClick={async () => {
+                                            if (!bulkForm.user_id || !bulkForm.start_date || !bulkForm.end_date) {
+                                                alert("Faltan datos requeridos");
+                                                return;
+                                            }
+                                            try {
+                                                await api.post('/schedules/bulk', bulkForm);
+                                                alert('Horarios generados con éxito');
+                                                setIsBulkModalOpen(false);
+                                                loadUsers();
+                                            } catch (e) {
+                                                console.error(e);
+                                                alert('Error al generar horarios');
+                                            }
+                                        }}
+                                        className="btn-primary px-6 py-2 bg-gradient-to-r from-purple-500 to-indigo-600 border-none"
+                                    >
+                                        Generar Horarios
+                                    </button>
                                 </div>
                             </div>
                         </motion.div>
