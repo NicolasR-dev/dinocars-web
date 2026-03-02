@@ -5,10 +5,16 @@
   --foreground: #f8fafc;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   color: var(--foreground);
   background: var(--background);
   font-family: 'Inter', sans-serif;
+  /* Prevent content from going under iOS home indicator */
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 @layer utilities {
@@ -26,5 +32,14 @@ body {
 
   .btn-primary {
     @apply bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 shadow-lg hover:shadow-indigo-500/30 active:scale-95;
+  }
+
+  .btn-glass {
+    @apply bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white font-medium py-2 px-4 rounded-lg transition-all duration-200 active:scale-95;
+  }
+
+  /* iOS safe area bottom padding for bottom nav */
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
   }
 }
