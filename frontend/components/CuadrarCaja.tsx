@@ -358,7 +358,7 @@ export default function CuadrarCaja({ initialRides, currentUser }: { initialRide
             </p>
 
             {/* Summary grid */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <SummaryCard
                     label="Ingresos Esperados"
                     value={fmt(calculation.ingresos_esperados)}
