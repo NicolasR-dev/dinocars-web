@@ -167,7 +167,7 @@ export default function Dashboard() {
       </header>
 
       {/* ── Main content ── */}
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 pt-6 pb-28 md:pb-10">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 pt-6 pb-28 md:pb-10">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
@@ -178,7 +178,7 @@ export default function Dashboard() {
           >
             {/* ── Vueltas ── */}
             {activeTab === 'vueltas' && (
-              <section className="glass-card p-5 sm:p-6 rounded-2xl">
+              <section className="glass-card p-5 sm:p-6 rounded-2xl max-w-3xl mx-auto">
                 <h2 className="text-xl font-bold mb-5 flex items-center gap-2">
                   <Calculator className="text-indigo-400 w-5 h-5" />
                   Calculadora de Vueltas
@@ -189,7 +189,7 @@ export default function Dashboard() {
 
             {/* ── Caja ── */}
             {activeTab === 'caja' && (
-              <section className="glass-card p-5 sm:p-6 rounded-2xl">
+              <section className="glass-card p-5 sm:p-6 rounded-2xl max-w-3xl mx-auto">
                 <h2 className="text-xl font-bold mb-5 flex items-center gap-2">
                   <DollarSign className="text-emerald-400 w-5 h-5" />
                   Cierre de Caja
