@@ -68,7 +68,7 @@ function SummaryCard({
         <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className={`glass p-4 rounded-xl flex items-center gap-3 ${wide ? 'col-span-2 sm:col-span-2' : ''} ${borderColor ? `border-l-4 ${borderColor}` : ''}`}
+            className={`glass p-4 rounded-xl flex items-center gap-3 ${wide ? 'col-span-full' : ''} ${borderColor ? `border-l-4 ${borderColor}` : ''}`}
         >
             <div className={`p-2.5 rounded-lg bg-white/5 ${color}`}>{icon}</div>
             <div className="flex-1 min-w-0">
@@ -389,7 +389,7 @@ export default function CuadrarCaja({ initialRides, currentUser }: { initialRide
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 }}
-                    className={`col-span-2 glass p-4 rounded-xl border-l-4 ${estadoColor.border} ${estadoColor.bg}`}
+                    className={`col-span-full glass p-4 rounded-xl border-l-4 ${estadoColor.border} ${estadoColor.bg}`}
                 >
                     <div className="flex items-center justify-between">
                         <div>
