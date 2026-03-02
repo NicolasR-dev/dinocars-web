@@ -65,7 +65,6 @@ export default function CuadrarCaja({ initialRides, currentUser }: { initialRide
         const valor_por_vuelta = 4000;
         const ingresos_esperados = (vueltas_efectivas * valor_por_vuelta) + formData.juguetes_vendidos_total;
 
-        // Assuming effective cash from previous day is what we start with? 
         const efectivo_dia_anterior = prevData.cash_in_box || 0;
 
         const total_contabilizado = formData.efectivo_retirado + formData.efectivo_caja + formData.pagos_tarjeta;
@@ -75,6 +74,9 @@ export default function CuadrarCaja({ initialRides, currentUser }: { initialRide
         const estado_caja = diferencia === 0 ? "CUADRA" : (diferencia > 0 ? "EXCEDENTE" : "FALTANTE");
         const efectivo_diario_generado = total_contabilizado - efectivo_dia_anterior;
 
+        // Cash-only income (excludes card payments)
+        const efectivo_en_caja_hoy = (formData.efectivo_retirado + formData.efectivo_caja) - efectivo_dia_anterior;
+
         setCalculation({
             vueltas_efectivas,
             ingresos_esperados,
@@ -82,7 +84,9 @@ export default function CuadrarCaja({ initialRides, currentUser }: { initialRide
             diferencia,
             estado_caja,
             efectivo_diario_generado,
-            efectivo_dia_anterior
+            efectivo_dia_anterior,
+            efectivo_en_caja_hoy,
+            pagos_tarjeta: formData.pagos_tarjeta
         });
         setStep(2);
     };
@@ -242,12 +246,12 @@ export default function CuadrarCaja({ initialRides, currentUser }: { initialRide
                     <p className="text-2xl font-bold text-white">${calculation.ingresos_esperados.toLocaleString()}</p>
                 </div>
                 <div className="glass p-4 rounded-xl">
-                    <p className="text-sm text-slate-400">Total Contabilizado</p>
-                    <p className="text-2xl font-bold text-white">${calculation.total_contabilizado.toLocaleString()}</p>
+                    <p className="text-sm text-slate-400">Efectivo Generado en Caja Hoy</p>
+                    <p className="text-2xl font-bold text-emerald-400">${calculation.efectivo_en_caja_hoy.toLocaleString()}</p>
                 </div>
                 <div className="glass p-4 rounded-xl">
-                    <p className="text-sm text-slate-400">Efectivo Generado Hoy</p>
-                    <p className="text-2xl font-bold text-emerald-400">${calculation.efectivo_diario_generado.toLocaleString()}</p>
+                    <p className="text-sm text-slate-400">Pagos con Tarjeta</p>
+                    <p className="text-2xl font-bold text-sky-400">${calculation.pagos_tarjeta.toLocaleString()}</p>
                 </div>
                 <div className={`glass p-4 rounded-xl border-l-4 ${calculation.estado_caja === 'CUADRA' ? 'border-emerald-500' : (calculation.estado_caja === 'EXCEDENTE' ? 'border-yellow-500' : 'border-red-500')}`}>
                     <p className="text-sm text-slate-400">Estado</p>

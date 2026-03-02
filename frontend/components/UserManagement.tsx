@@ -65,7 +65,17 @@ export default function UserManagement({ currentUser }: { currentUser: any }) {
         d = new Date(d);
         var day = d.getDay(),
             diff = d.getDate() - day + (day == 0 ? -6 : 1); // adjust when day is sunday
-        return new Date(d.setDate(diff));
+        d.setDate(diff);
+        d.setHours(0, 0, 0, 0);
+        return d;
+    }
+
+    // Format a Date to YYYY-MM-DD using LOCAL time (avoids UTC offset shifting the day)
+    function toLocalDateStr(d: Date): string {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
     }
 
     useEffect(() => {
@@ -210,17 +220,14 @@ export default function UserManagement({ currentUser }: { currentUser: any }) {
     };
 
     const getUserTotalHours = (userSchedules: any[]) => {
-        // Filter schedules for the current week
-        const weekStart = new Date(currentWeekStart);
+        // Filter schedules for the current week using LOCAL date strings
         const weekEnd = new Date(currentWeekStart);
         weekEnd.setDate(weekEnd.getDate() + 6);
 
-        // Normalize to YYYY-MM-DD strings for comparison
-        const startStr = weekStart.toISOString().split('T')[0];
-        const endStr = weekEnd.toISOString().split('T')[0];
+        const startStr = toLocalDateStr(currentWeekStart);
+        const endStr = toLocalDateStr(weekEnd);
 
         const weeklySchedules = userSchedules.filter((s: any) => {
-            // s.date is already YYYY-MM-DD
             return s.date >= startStr && s.date <= endStr;
         });
 
@@ -230,13 +237,15 @@ export default function UserManagement({ currentUser }: { currentUser: any }) {
     const changeWeek = (offset: number) => {
         const newStart = new Date(currentWeekStart);
         newStart.setDate(newStart.getDate() + (offset * 7));
+        newStart.setHours(0, 0, 0, 0);
         setCurrentWeekStart(newStart);
     };
 
-    // Generate dates for the current week
+    // Generate dates for the current week (each date at local midnight)
     const weekDates = Array.from({ length: 7 }, (_, i) => {
         const d = new Date(currentWeekStart);
         d.setDate(d.getDate() + i);
+        d.setHours(0, 0, 0, 0);
         return d;
     });
 
@@ -370,7 +379,7 @@ export default function UserManagement({ currentUser }: { currentUser: any }) {
 
                                             {/* Days */}
                                             {weekDates.map(date => {
-                                                const dateStr = date.toISOString().split('T')[0];
+                                                const dateStr = toLocalDateStr(date);
                                                 const userSchedule = schedules.find(s => s.user.id === user.id && s.date === dateStr);
 
                                                 return (
