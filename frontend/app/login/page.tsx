@@ -60,32 +60,26 @@ export default function LoginPage() {
                     <form onSubmit={handleLogin} className="space-y-6">
                         <div>
                             <label className="block text-sm font-medium text-slate-300 mb-2">Usuario</label>
-                            <div className="relative">
-                                <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 w-5 h-5" />
-                                <input
-                                    type="text"
-                                    value={username}
-                                    onChange={(e) => setUsername(e.target.value)}
-                                    className="input-premium w-full pl-10 text-white"
-                                    placeholder="Ingresa tu usuario"
-                                    required
-                                />
-                            </div>
+                            <input
+                                type="text"
+                                value={username}
+                                onChange={(e) => setUsername(e.target.value)}
+                                className="input-premium w-full text-white"
+                                placeholder="Ingresa tu usuario"
+                                required
+                            />
                         </div>
 
                         <div>
                             <label className="block text-sm font-medium text-slate-300 mb-2">Contraseña</label>
-                            <div className="relative">
-                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 w-5 h-5" />
-                                <input
-                                    type="password"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    className="input-premium w-full pl-10 text-white"
-                                    placeholder="••••••••"
-                                    required
-                                />
-                            </div>
+                            <input
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                className="input-premium w-full text-white"
+                                placeholder="••••••••"
+                                required
+                            />
                         </div>
 
                         {error && (

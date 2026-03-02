@@ -5,8 +5,8 @@ import api from '@/lib/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Save, AlertTriangle, CheckCircle, ChevronRight,
-    CreditCard, Banknote, RotateCw, ShoppingBag, CalendarDays,
-    User, ArrowLeft, TrendingUp, Wallet, Receipt
+    Banknote, RotateCw, ShoppingBag, CalendarDays,
+    ArrowLeft, TrendingUp, Wallet, Receipt, CreditCard
 } from 'lucide-react';
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -236,17 +236,14 @@ export default function CuadrarCaja({ initialRides, currentUser }: { initialRide
                             />
                         </Field>
                         <Field label="Trabajador">
-                            <div className="relative">
-                                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                                <input
-                                    type="text"
-                                    name="worker_name"
-                                    value={formData.worker_name}
-                                    onChange={handleInputChange}
-                                    className="input-premium w-full text-white pl-9"
-                                    placeholder="Nombre del trabajador"
-                                />
-                            </div>
+                            <input
+                                type="text"
+                                name="worker_name"
+                                value={formData.worker_name}
+                                onChange={handleInputChange}
+                                className="input-premium w-full text-white"
+                                placeholder="Nombre del trabajador"
+                            />
                         </Field>
                     </div>
                 </div>
@@ -285,18 +282,15 @@ export default function CuadrarCaja({ initialRides, currentUser }: { initialRide
                             <NumInput name="efectivo_caja" value={formData.efectivo_caja} onChange={handleInputChange} />
                         </Field>
                         <Field label="Pagos con Tarjeta" hint="Total transbank/POS">
-                            <div className="relative">
-                                <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-sky-400 pointer-events-none" />
-                                <input
-                                    type="number"
-                                    name="pagos_tarjeta"
-                                    value={formData.pagos_tarjeta}
-                                    onChange={handleInputChange}
-                                    onFocus={(e) => e.target.select()}
-                                    inputMode="numeric"
-                                    className="input-premium w-full text-white pl-9 text-lg font-semibold"
-                                />
-                            </div>
+                            <input
+                                type="number"
+                                name="pagos_tarjeta"
+                                value={formData.pagos_tarjeta}
+                                onChange={handleInputChange}
+                                onFocus={(e) => e.target.select()}
+                                inputMode="numeric"
+                                className="input-premium w-full text-white text-lg font-semibold"
+                            />
                         </Field>
                     </div>
                 </div>
