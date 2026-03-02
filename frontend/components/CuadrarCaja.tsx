@@ -77,6 +77,9 @@ export default function CuadrarCaja({ initialRides, currentUser }: { initialRide
         // Cash-only income (excludes card payments)
         const efectivo_en_caja_hoy = (formData.efectivo_retirado + formData.efectivo_caja) - efectivo_dia_anterior;
 
+        // Total del día: efectivo generado + tarjeta
+        const total_dia = efectivo_en_caja_hoy + formData.pagos_tarjeta;
+
         setCalculation({
             vueltas_efectivas,
             ingresos_esperados,
@@ -86,7 +89,8 @@ export default function CuadrarCaja({ initialRides, currentUser }: { initialRide
             efectivo_diario_generado,
             efectivo_dia_anterior,
             efectivo_en_caja_hoy,
-            pagos_tarjeta: formData.pagos_tarjeta
+            pagos_tarjeta: formData.pagos_tarjeta,
+            total_dia
         });
         setStep(2);
     };
@@ -253,7 +257,11 @@ export default function CuadrarCaja({ initialRides, currentUser }: { initialRide
                     <p className="text-sm text-slate-400">Pagos con Tarjeta</p>
                     <p className="text-2xl font-bold text-sky-400">${calculation.pagos_tarjeta.toLocaleString()}</p>
                 </div>
-                <div className={`glass p-4 rounded-xl border-l-4 ${calculation.estado_caja === 'CUADRA' ? 'border-emerald-500' : (calculation.estado_caja === 'EXCEDENTE' ? 'border-yellow-500' : 'border-red-500')}`}>
+                <div className="glass p-4 rounded-xl col-span-1 md:col-span-2">
+                    <p className="text-sm text-slate-400">Total del Día (Efectivo + Tarjeta)</p>
+                    <p className="text-2xl font-bold text-violet-400">${calculation.total_dia.toLocaleString()}</p>
+                </div>
+                <div className={`glass p-4 rounded-xl border-l-4 col-span-1 md:col-span-2 ${calculation.estado_caja === 'CUADRA' ? 'border-emerald-500' : (calculation.estado_caja === 'EXCEDENTE' ? 'border-yellow-500' : 'border-red-500')}`}>
                     <p className="text-sm text-slate-400">Estado</p>
                     <div className="flex items-center gap-2">
                         <p className={`text-2xl font-bold ${calculation.estado_caja === 'CUADRA' ? 'text-emerald-400' : (calculation.estado_caja === 'EXCEDENTE' ? 'text-yellow-400' : 'text-red-400')}`}>
