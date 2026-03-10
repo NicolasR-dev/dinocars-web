@@ -19,7 +19,13 @@ export default function RecordDetailModal({ record, isOpen, onClose, onUpdate, u
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        setFormData(record);
+        if (record) {
+            const prev_cash = (record.total_counted || 0) - (record.daily_cash_generated || 0);
+            setFormData({
+                ...record,
+                cash_in_box_prev: prev_cash
+            });
+        }
     }, [record]);
 
     if (!isOpen || !record) return null;
@@ -28,46 +34,33 @@ export default function RecordDetailModal({ record, isOpen, onClose, onUpdate, u
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData((prev: any) => {
+            const parsedValue = (name === 'date' || name === 'status' || name === 'toys_sold_details' || name === 'worker_name')
+                ? value
+                : parseFloat(value) || 0;
+
             const newData = {
                 ...prev,
-                [name]: (name === 'date' || name === 'status' || name === 'toys_sold_details' || name === 'worker_name') ? value : parseFloat(value) || 0
+                [name]: parsedValue
             };
 
             // Recalculate logic
             const valor_por_vuelta = 4000;
-            const effective_rides = (newData.rides_today || 0) - (newData.admin_rides || 0);
+            const rides_today = newData.rides_today || 0;
+            const admin_rides = newData.admin_rides || 0;
+            const effective_rides = rides_today - admin_rides;
             const expected_income = (effective_rides * valor_por_vuelta) + (newData.toys_sold_total || 0);
 
-            // Total Counted: Sum of Cash in Box + Card Payments + Cash Withdrawn (to match Excel logic)
-            // User said "Box + Card", but Excel has "Box + Card + Withdrawn". 
-            // If we exclude Withdrawn, the historical data will show huge deficits.
-            // I will keep the Excel logic for consistency, but if the user insists, we can change it.
-            // Actually, let's stick to the Excel logic which is: Total Counted = Withdrawn + Box + Card
+            // Total Counted: Withdrawn + Box + Card
             const total_counted = (newData.cash_withdrawn || 0) + (newData.cash_in_box || 0) + (newData.card_payments || 0);
 
-            // Difference
-            // We need the previous day's cash to calculate the "Adjusted Total" if we want to be precise like CuadrarCaja.
-            // BUT, in the modal we might not have the previous record easily.
-            // However, the `difference` stored in DB is `total_counted_adjusted - expected`.
-            // `total_counted_adjusted` = `total_counted` - `prev_cash`.
-            // If we don't have `prev_cash`, we can't perfectly recalculate `difference` from scratch without fetching the prev record.
-            // ERROR: The `difference` field in DB is the final difference.
-            // If I edit `cash_in_box`, `difference` should change.
-            // `difference` = (`total_counted` - `prev_cash`) - `expected_income`.
-            // We can infer `prev_cash` from the existing record? 
-            // `prev_cash` = `total_counted` - `daily_cash_generated` (maybe?)
-            // Or `prev_cash` = `total_counted` - `expected_income` - `difference`? No.
-
-            // Calculate Previous Cash from initial record state
-            // prev_cash = initial_total_counted - initial_daily_generated
-            const initial_total_counted = record.total_counted || 0;
-            const initial_daily_generated = record.daily_cash_generated || 0;
-            const prev_cash = initial_total_counted - initial_daily_generated;
-
+            // Difference and Daily Cash
+            // Use the editable cash_in_box_prev from current formData state
+            const prev_cash = newData.cash_in_box_prev || 0;
             const daily_cash_generated = total_counted - prev_cash;
             const difference = daily_cash_generated - expected_income;
 
             // Update derived fields
+            newData.effective_rides = effective_rides;
             newData.expected_income = expected_income;
             newData.total_counted = total_counted;
             newData.daily_cash_generated = daily_cash_generated;
@@ -170,6 +163,7 @@ export default function RecordDetailModal({ record, isOpen, onClose, onUpdate, u
                                 <Field label="Efectivo Retirado" name="cash_withdrawn" value={formData.cash_withdrawn} isEditing={isEditing} onChange={handleInputChange} />
                                 <Field label="Efectivo en Caja" name="cash_in_box" value={formData.cash_in_box} isEditing={isEditing} onChange={handleInputChange} />
                                 <Field label="Pagos Tarjeta" name="card_payments" value={formData.card_payments} isEditing={isEditing} onChange={handleInputChange} />
+                                <Field label="Caja Día Anterior" name="cash_in_box_prev" value={formData.cash_in_box_prev} isEditing={isEditing} onChange={handleInputChange} />
                                 <Field label="Total Contabilizado" name="total_counted" value={formData.total_counted} isEditing={isEditing} onChange={handleInputChange} readOnly={true} />
                             </div>
                         </div>
