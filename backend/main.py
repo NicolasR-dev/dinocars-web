@@ -28,13 +28,21 @@ def startup_event():
             ("users", "opening_start_time VARCHAR"),
             ("users", "opening_end_time VARCHAR"),
             ("users", "closing_start_time VARCHAR"),
-            ("users", "closing_end_time VARCHAR"),
             ("daily_records", "dino_counts VARCHAR"),
             ("daily_records", "daily_cash_generated FLOAT"),
             ("daily_records", "worker_name VARCHAR"),
             ("daily_records", "toys_sold_details VARCHAR"),
             ("daily_records", "toys_sold_total FLOAT"),
             ("daily_records", "submitted_by VARCHAR"),
+            ("daily_records", "admin_rides INTEGER"),
+            ("daily_records", "effective_rides INTEGER"),
+            ("daily_records", "expected_income FLOAT"),
+            ("daily_records", "cash_withdrawn FLOAT"),
+            ("daily_records", "cash_in_box FLOAT"),
+            ("daily_records", "card_payments FLOAT"),
+            ("daily_records", "total_counted FLOAT"),
+            ("daily_records", "status VARCHAR"),
+            ("daily_records", "difference FLOAT"),
         ]
         
         for table, col_def in columns_to_add:
@@ -168,6 +176,7 @@ def get_last_record(db: Session = Depends(get_db), current_user: models.User = D
             admin_rides=0, effective_rides=0, expected_income=0, cash_withdrawn=0,
             cash_in_box=0, card_payments=0, total_counted=0, status="", difference=0,
             daily_cash_generated=0, toys_sold_details="", toys_sold_total=0, submitted_by="",
+            worker_name="", dino_counts="",
             created_at=datetime.utcnow()
         )
     return last_record
