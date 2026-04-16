@@ -30,6 +30,10 @@ def startup_event():
             ("users", "closing_start_time VARCHAR"),
             ("users", "closing_end_time VARCHAR"),
             ("daily_records", "dino_counts VARCHAR"),
+            ("daily_records", "daily_cash_generated FLOAT"),
+            ("daily_records", "worker_name VARCHAR"),
+            ("daily_records", "toys_sold_details VARCHAR"),
+            ("daily_records", "toys_sold_total FLOAT"),
         ]
         
         for table, col_def in columns_to_add:
