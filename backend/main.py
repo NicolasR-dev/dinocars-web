@@ -43,6 +43,9 @@ def startup_event():
             ("daily_records", "total_counted FLOAT"),
             ("daily_records", "status VARCHAR"),
             ("daily_records", "difference FLOAT"),
+            ("daily_records", "total_accumulated_prev INTEGER"),
+            ("daily_records", "total_accumulated_today INTEGER"),
+            ("daily_records", "rides_today INTEGER"),
         ]
         
         for table, col_def in columns_to_add:
