@@ -112,6 +112,31 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Emergency Error Handler to catch all 500s and return CORS + Error trace
+@app.middleware("http")
+async def db_error_middleware(request: Request, call_next):
+    try:
+        return await call_next(request)
+    except Exception as e:
+        import traceback
+        import os
+        error_trace = traceback.format_exc()
+        print(f"CRITICAL SERVER ERROR: {error_trace}")
+        from fastapi.responses import JSONResponse
+        return JSONResponse(
+            status_code=500,
+            content={
+                "detail": "Internal Server Error during operation",
+                "error": str(e),
+                "trace": error_trace if os.getenv("DEBUG") == "true" else "Check server logs"
+            },
+            headers={
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "*",
+                "Access-Control-Allow-Headers": "*"
+            }
+        )
+
 # Dependency
 def get_db():
     db = database.SessionLocal()
