@@ -20,6 +20,25 @@ app = FastAPI(title="DinoCars API")
 def startup_event():
     db = database.SessionLocal()
     try:
+        from sqlalchemy import text
+        # Auto-migrate table schemas
+        columns_to_add = [
+            ("users", "default_start_time VARCHAR"),
+            ("users", "default_end_time VARCHAR"),
+            ("users", "opening_start_time VARCHAR"),
+            ("users", "opening_end_time VARCHAR"),
+            ("users", "closing_start_time VARCHAR"),
+            ("users", "closing_end_time VARCHAR"),
+            ("daily_records", "dino_counts VARCHAR"),
+        ]
+        
+        for table, col_def in columns_to_add:
+            try:
+                db.execute(text(f"ALTER TABLE {table} ADD COLUMN {col_def}"))
+                db.commit()
+            except Exception:
+                db.rollback() # Ignores errors if column already exists
+
         # Check if admin exists
         admin = db.query(models.User).filter(models.User.role == "admin").first()
         if not admin:
@@ -36,7 +55,7 @@ def startup_event():
             db.commit()
             print("Admin user seeded successfully.")
     except Exception as e:
-        print(f"Error seeding admin: {e}")
+        print(f"Error seeding admin/migrating: {e}")
     finally:
         db.close()
 
