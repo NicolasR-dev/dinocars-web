@@ -21,9 +21,11 @@ export default function RecordDetailModal({ record, isOpen, onClose, onUpdate, u
     useEffect(() => {
         if (record) {
             const prev_cash = (record.total_counted || 0) - (record.daily_cash_generated || 0);
+            const dinos = record.dino_counts ? JSON.parse(record.dino_counts) : [0, 0, 0, 0, 0, 0];
             setFormData({
                 ...record,
-                cash_in_box_prev: prev_cash
+                cash_in_box_prev: prev_cash,
+                dinos: dinos
             });
         }
     }, [record]);
@@ -33,6 +35,28 @@ export default function RecordDetailModal({ record, isOpen, onClose, onUpdate, u
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
+        
+        // Handle Dinosaur count changes
+        if (name.startsWith('dino_')) {
+            const index = parseInt(name.split('_')[1]);
+            const newDinos = [...(formData.dinos || [0, 0, 0, 0, 0, 0])];
+            newDinos[index] = parseInt(value) || 0;
+            
+            setFormData((prev: any) => {
+                const newTotalRides = newDinos.reduce((sum, val) => sum + val, 0);
+                const newData = {
+                    ...prev,
+                    dinos: newDinos,
+                    dino_counts: JSON.stringify(newDinos),
+                    total_accumulated_today: prev.total_accumulated_prev + newTotalRides,
+                    rides_today: newTotalRides
+                };
+
+                return recalculateFlow(newData);
+            });
+            return;
+        }
+
         setFormData((prev: any) => {
             const parsedValue = (name === 'date' || name === 'status' || name === 'toys_sold_details' || name === 'worker_name')
                 ? value
@@ -43,34 +67,39 @@ export default function RecordDetailModal({ record, isOpen, onClose, onUpdate, u
                 [name]: parsedValue
             };
 
-            // Recalculate logic
-            const valor_por_vuelta = 4000;
-            const rides_today = newData.rides_today || 0;
-            const admin_rides = newData.admin_rides || 0;
-            const effective_rides = rides_today - admin_rides;
-            const expected_income = (effective_rides * valor_por_vuelta) + (newData.toys_sold_total || 0);
+            // If prev_accumulated is edited (only admin), check if we update total_today
+            if (name === 'total_accumulated_prev') {
+                newData.total_accumulated_today = parsedValue + (newData.rides_today || 0);
+            }
 
-            // Total Counted: Withdrawn + Box + Card
-            const total_counted = (newData.cash_withdrawn || 0) + (newData.cash_in_box || 0) + (newData.card_payments || 0);
-
-            // Difference and Daily Cash
-            // Use the editable cash_in_box_prev from current formData state
-            const prev_cash = newData.cash_in_box_prev || 0;
-            const daily_cash_generated = total_counted - prev_cash;
-            const difference = daily_cash_generated - expected_income;
-
-            // Update derived fields
-            newData.effective_rides = effective_rides;
-            newData.expected_income = expected_income;
-            newData.total_counted = total_counted;
-            newData.daily_cash_generated = daily_cash_generated;
-            newData.difference = difference;
-
-            // Update status
-            newData.status = difference === 0 ? "CUADRA" : (difference > 0 ? "EXCEDENTE" : "FALTANTE");
-
-            return newData;
+            return recalculateFlow(newData);
         });
+    };
+
+    const recalculateFlow = (newData: any) => {
+        const valor_por_vuelta = 4000;
+        const rides_today = newData.rides_today || 0;
+        const admin_rides = newData.admin_rides || 0;
+        const effective_rides = rides_today - admin_rides;
+        const expected_income = (effective_rides * valor_por_vuelta) + (newData.toys_sold_total || 0);
+
+        // Total Counted: Withdrawn + Box + Card
+        const total_counted = (newData.cash_withdrawn || 0) + (newData.cash_in_box || 0) + (newData.card_payments || 0);
+
+        // Difference and Daily Cash
+        const prev_cash = newData.cash_in_box_prev || 0;
+        const daily_cash_generated = total_counted - prev_cash;
+        const difference = daily_cash_generated - expected_income;
+
+        return {
+            ...newData,
+            effective_rides,
+            expected_income,
+            total_counted,
+            daily_cash_generated,
+            difference,
+            status: difference === 0 ? "CUADRA" : (difference > 0 ? "EXCEDENTE" : "FALTANTE")
+        };
     };
 
     const handleSave = async () => {
@@ -163,10 +192,41 @@ export default function RecordDetailModal({ record, isOpen, onClose, onUpdate, u
                                 <Field label="Efectivo Retirado" name="cash_withdrawn" value={formData.cash_withdrawn} isEditing={isEditing} onChange={handleInputChange} />
                                 <Field label="Efectivo en Caja" name="cash_in_box" value={formData.cash_in_box} isEditing={isEditing} onChange={handleInputChange} />
                                 <Field label="Pagos Tarjeta" name="card_payments" value={formData.card_payments} isEditing={isEditing} onChange={handleInputChange} />
-                                <Field label="Caja Día Anterior" name="cash_in_box_prev" value={formData.cash_in_box_prev} isEditing={isEditing} onChange={handleInputChange} />
+                                {userRole === 'admin' && (
+                                    <>
+                                        <Field label="Caja Día Anterior" name="cash_in_box_prev" value={formData.cash_in_box_prev} isEditing={isEditing} onChange={handleInputChange} />
+                                        <Field label="Vueltas Acum. Ayer" name="total_accumulated_prev" value={formData.total_accumulated_prev} isEditing={isEditing} onChange={handleInputChange} />
+                                        <Field label="Vueltas Acum. Hoy" name="total_accumulated_today" value={formData.total_accumulated_today} isEditing={isEditing} onChange={handleInputChange} readOnly={true} />
+                                    </>
+                                )}
                                 <Field label="Total Contabilizado" name="total_counted" value={formData.total_counted} isEditing={isEditing} onChange={handleInputChange} readOnly={true} />
                             </div>
                         </div>
+
+                        {/* Dinosaur Counts (Admin Only) */}
+                        {userRole === 'admin' && (
+                            <div className="bg-slate-800/20 p-4 rounded-xl border border-slate-700/50">
+                                <h3 className="text-xs font-bold text-slate-500 uppercase mb-3 px-1">Detalle Dinosaurios</h3>
+                                <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+                                    {(formData.dinos || [0, 0, 0, 0, 0, 0]).map((count: number, idx: number) => (
+                                        <div key={idx} className="space-y-1">
+                                            <label className="text-[10px] text-slate-500 text-center block">Dino {idx + 1}</label>
+                                            {isEditing ? (
+                                                <input
+                                                    type="number"
+                                                    name={`dino_${idx}`}
+                                                    value={count}
+                                                    onChange={handleInputChange}
+                                                    className="input-premium w-full py-1 text-center text-sm text-white"
+                                                />
+                                            ) : (
+                                                <p className="text-center text-sm font-bold text-white">{count}</p>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
 
                         {/* Generated Cash (New Field) */}
                         <div className="bg-slate-800/30 p-4 rounded-xl border border-slate-700/50">

@@ -105,10 +105,11 @@ function StepIndicator({ step }: { step: number }) {
 
 // ── main component ────────────────────────────────────────────────────────────
 
-export default function CuadrarCaja({ initialRides, currentUser }: { initialRides?: number; currentUser?: any }) {
+export default function CuadrarCaja({ initialRides, initialDinos, currentUser }: { initialRides?: number; initialDinos?: number[]; currentUser?: any }) {
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
     const [prevData, setPrevData] = useState<any>(null);
+    const [hasSaved, setHasSaved] = useState(false);
 
     const [formData, setFormData] = useState({
         date: toLocalDateStr(new Date()),
@@ -156,60 +157,62 @@ export default function CuadrarCaja({ initialRides, currentUser }: { initialRide
         }));
     };
 
-    const calculateResults = () => {
+    const handleSaveAndShowSummary = async () => {
         if (!prevData) return;
-
-        const vueltas_efectivas = formData.vueltas_hoy - formData.vueltas_admin;
-        const ingresos_esperados = (vueltas_efectivas * 4000) + formData.juguetes_vendidos_total;
-        const efectivo_dia_anterior = prevData.cash_in_box || 0;
-        const total_contabilizado = formData.efectivo_retirado + formData.efectivo_caja + formData.pagos_tarjeta;
-        const diferencia = (total_contabilizado - efectivo_dia_anterior) - ingresos_esperados;
-        const estado_caja = diferencia === 0 ? 'CUADRA' : diferencia > 0 ? 'EXCEDENTE' : 'FALTANTE';
-        const efectivo_en_caja_hoy = (formData.efectivo_retirado + formData.efectivo_caja) - efectivo_dia_anterior;
-        const total_dia = efectivo_en_caja_hoy + formData.pagos_tarjeta;
-
-        setCalculation({
-            vueltas_efectivas,
-            ingresos_esperados,
-            total_contabilizado,
-            diferencia,
-            estado_caja,
-            efectivo_dia_anterior,
-            efectivo_en_caja_hoy,
-            pagos_tarjeta: formData.pagos_tarjeta,
-            total_dia,
-            efectivo_diario_generado: total_contabilizado - efectivo_dia_anterior,
-        });
-        setStep(2);
-    };
-
-    const handleSubmit = async () => {
         setLoading(true);
+
         try {
+            // Internal calculation for saving
+            const vueltas_efectivas = formData.vueltas_hoy - formData.vueltas_admin;
+            const ingresos_esperados = (vueltas_efectivas * 4000) + formData.juguetes_vendidos_total;
+            const efectivo_dia_anterior = prevData.cash_in_box || 0;
+            const total_contabilizado = formData.efectivo_retirado + formData.efectivo_caja + formData.pagos_tarjeta;
+            const diferencia = (total_contabilizado - efectivo_dia_anterior) - ingresos_esperados;
+            const estado_caja = diferencia === 0 ? 'CUADRA' : diferencia > 0 ? 'EXCEDENTE' : 'FALTANTE';
+            const efectivo_en_caja_hoy = (formData.efectivo_retirado + formData.efectivo_caja) - efectivo_dia_anterior;
+            const total_dia = efectivo_en_caja_hoy + formData.pagos_tarjeta;
+            const efectivo_diario_generado = total_contabilizado - efectivo_dia_anterior;
+
+            const calcResult = {
+                vueltas_efectivas,
+                ingresos_esperados,
+                total_contabilizado,
+                diferencia,
+                estado_caja,
+                efectivo_dia_anterior,
+                efectivo_en_caja_hoy,
+                pagos_tarjeta: formData.pagos_tarjeta,
+                total_dia,
+                efectivo_diario_generado,
+            };
+
+            // Save to DB
             await api.post('/records/', {
                 date: formData.date,
                 total_accumulated_prev: prevData.total_accumulated_today || 0,
                 total_accumulated_today: (prevData.total_accumulated_today || 0) + formData.vueltas_hoy,
                 rides_today: formData.vueltas_hoy,
                 admin_rides: formData.vueltas_admin,
-                effective_rides: calculation.vueltas_efectivas,
-                expected_income: calculation.ingresos_esperados,
+                effective_rides: vueltas_efectivas,
+                expected_income: ingresos_esperados,
                 cash_withdrawn: formData.efectivo_retirado,
                 cash_in_box: formData.efectivo_caja,
                 card_payments: formData.pagos_tarjeta,
-                total_counted: calculation.total_contabilizado,
-                status: calculation.estado_caja,
-                difference: calculation.diferencia,
-                daily_cash_generated: calculation.efectivo_diario_generado,
+                total_counted: total_contabilizado,
+                status: estado_caja,
+                difference: diferencia,
+                daily_cash_generated: efectivo_diario_generado,
                 toys_sold_details: formData.juguetes_detalles,
                 toys_sold_total: formData.juguetes_vendidos_total,
                 worker_name: formData.worker_name,
+                dino_counts: initialDinos ? JSON.stringify(initialDinos) : null
             });
-            alert('¡Caja cuadrada y guardada con éxito!');
-            window.location.reload();
+            setCalculation(calcResult);
+            setHasSaved(true);
+            setStep(2);
         } catch (e) {
             console.error(e);
-            alert('Error al guardar');
+            alert('Error al guardar el cierre. Por favor intente nuevamente.');
         } finally {
             setLoading(false);
         }
@@ -316,11 +319,11 @@ export default function CuadrarCaja({ initialRides, currentUser }: { initialRide
 
                 {/* ── CTA ── */}
                 <button
-                    onClick={calculateResults}
-                    disabled={!prevData}
+                    onClick={handleSaveAndShowSummary}
+                    disabled={!prevData || loading}
                     className="w-full btn-primary flex items-center justify-center gap-2 py-4 text-base font-bold disabled:opacity-50"
                 >
-                    Ver Resumen
+                    {loading ? 'Guardando...' : 'Guardar y Ver Resumen'}
                     <ChevronRight className="w-5 h-5" />
                 </button>
                 {!prevData && (
@@ -436,21 +439,18 @@ export default function CuadrarCaja({ initialRides, currentUser }: { initialRide
             </div>
 
             {/* Actions */}
-            <div className="flex flex-col sm:flex-row gap-3 pt-1">
+            <div className="flex flex-col gap-3 pt-1">
+                <div className="bg-emerald-500/20 border border-emerald-500/30 p-4 rounded-xl flex items-center gap-3">
+                    <CheckCircle className="w-6 h-6 text-emerald-400" />
+                    <p className="text-sm font-bold text-emerald-400">¡Cierre guardado correctamente en el sistema!</p>
+                </div>
+
                 <button
-                    onClick={() => setStep(1)}
-                    className="flex-1 py-3.5 rounded-xl border border-slate-600 text-slate-300 hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 font-medium"
-                >
-                    <ArrowLeft className="w-4 h-4" />
-                    Volver y Editar
-                </button>
-                <button
-                    onClick={handleSubmit}
-                    disabled={loading}
-                    className="flex-1 btn-primary flex items-center justify-center gap-2 py-3.5 font-bold text-base disabled:opacity-60"
+                    onClick={() => window.location.reload()}
+                    className="w-full btn-primary flex items-center justify-center gap-2 py-4 font-bold text-base shadow-xl shadow-indigo-500/20"
                 >
                     <Save className="w-5 h-5" />
-                    {loading ? 'Guardando…' : 'Confirmar y Guardar'}
+                    Finalizar y Volver
                 </button>
             </div>
         </div>

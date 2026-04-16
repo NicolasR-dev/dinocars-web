@@ -69,6 +69,7 @@ class DailyRecordBase(BaseModel):
     status: str
     difference: float
     daily_cash_generated: float
+    dino_counts: Optional[str] = None
     toys_sold_details: Optional[str] = ""
     toys_sold_total: float
     worker_name: Optional[str] = None

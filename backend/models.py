@@ -54,6 +54,7 @@ class DailyRecord(Base):
     status = Column(String)  # CUADRA, EXCEDENTE, FALTANTE
     difference = Column(Float)
     daily_cash_generated = Column(Float)
+    dino_counts = Column(String, nullable=True) # JSON array of 6 integers
     toys_sold_details = Column(String)  # JSON or text description
     toys_sold_total = Column(Float)
     

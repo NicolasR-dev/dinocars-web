@@ -5,15 +5,15 @@ import api from '@/lib/api';
 import { motion } from 'framer-motion';
 import { Calculator, Save } from 'lucide-react';
 
-export default function CalcularVueltas({ onComplete }: { onComplete: (data: any) => void }) {
+export default function CalcularVueltas({ onComplete, userRole }: { onComplete: (data: any) => void; userRole?: string }) {
     const [dinos, setDinos] = useState<number[]>([0, 0, 0, 0, 0, 0]);
     const [result, setResult] = useState<any>(null);
     const [loading, setLoading] = useState(false);
+    const isAdmin = userRole === 'admin';
 
     const handleCalculate = async () => {
         setLoading(true);
         try {
-            // First get the last record to know previous total
             const lastRecordRes = await api.get('/last-record');
             const prevTotal = lastRecordRes.data.total_accumulated_today || 0;
 
@@ -22,7 +22,12 @@ export default function CalcularVueltas({ onComplete }: { onComplete: (data: any
                 total_accumulated_prev: prevTotal
             });
 
-            setResult(res.data);
+            if (isAdmin) {
+                setResult(res.data);
+            }
+            
+            // Still call onComplete but maybe after a short delay or directly
+            // If it's a worker, we want to move them to the next tab without showing the green box.
             onComplete({ ...res.data, dinos });
         } catch (error) {
             console.error(error);
@@ -58,10 +63,10 @@ export default function CalcularVueltas({ onComplete }: { onComplete: (data: any
                 className="w-full btn-primary flex items-center justify-center gap-2"
             >
                 <Calculator className="w-5 h-5" />
-                Calcular Total
+                {isAdmin ? 'Calcular Total' : 'Confirmar y Continuar'}
             </button>
 
-            {result && (
+            {isAdmin && result && (
                 <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}

@@ -183,7 +183,7 @@ export default function Dashboard() {
                   <Calculator className="text-indigo-400 w-5 h-5" />
                   Calculadora de Vueltas
                 </h2>
-                <CalcularVueltas onComplete={handleCalculationComplete} />
+                <CalcularVueltas onComplete={handleCalculationComplete} userRole={user.role} />
               </section>
             )}
 

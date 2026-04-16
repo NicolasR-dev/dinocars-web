@@ -438,13 +438,18 @@ def migrate_db(db: Session = Depends(get_db), current_user: models.User = Depend
             "closing_end_time VARCHAR"
         ]
         
-        results = []
+        # Add columns to users table
         for col in columns:
             try:
                 db.execute(text(f"ALTER TABLE users ADD COLUMN {col}"))
-                results.append(f"Added {col}")
-            except Exception as e:
-                results.append(f"Skipped {col} (might exist)")
+            except Exception:
+                pass
+
+        # Add columns to daily_records table
+        try:
+            db.execute(text("ALTER TABLE daily_records ADD COLUMN dino_counts VARCHAR"))
+        except Exception:
+            pass
         
         db.commit()
         return {"status": "success", "details": results}
