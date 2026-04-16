@@ -15,7 +15,7 @@ models.Base.metadata.create_all(bind=database.engine)
 
 app = FastAPI(title="DinoCars API")
 
-# Auto-Seed Admin on Startup (for ephemeral DBs like Render SQLite)
+# Auto-Seed Admin and Keep-Alive on Startup
 @app.on_event("startup")
 def startup_event():
     db = database.SessionLocal()
@@ -40,10 +40,32 @@ def startup_event():
     finally:
         db.close()
 
+    # Keep Alive Mechanism
+    import threading
+    import time
+    import requests
+    
+    def keep_alive():
+        url = os.getenv("BACKEND_URL")
+        if url:
+            print(f"Starting keep-alive for {url}")
+            while True:
+                try:
+                    time.sleep(14 * 60) # 14 minutes
+                    print(f"Pinging {url} to keep alive...")
+                    requests.get(f"{url}/health")
+                except Exception as e:
+                    print(f"Keep-alive ping failed: {e}")
+        else:
+            print("No BACKEND_URL set, skipping keep-alive.")
+
+    threading.Thread(target=keep_alive, daemon=True).start()
+
 # CORS
 origins = [
     "http://localhost:3000",
     "https://dinocars-web.vercel.app",
+    "https://dinocars-web-nicolasr-devs-projects.vercel.app", # Potential secondary Vercel URL
     "https://dinocars-web.onrender.com"
 ]
 app.add_middleware(
@@ -167,40 +189,7 @@ def delete_record(record_id: int, db: Session = Depends(get_db), current_user: m
     db.commit()
     return {"ok": True}
 
-# --- Init Script ---
-@app.on_event("startup")
-def startup_event():
-    db = database.SessionLocal()
-    # Create default admin if not exists
-    user = db.query(models.User).filter(models.User.username == "admin").first()
-    if not user:
-        hashed_password = auth.get_password_hash("admin123") # Default password
-        db_user = models.User(username="admin", hashed_password=hashed_password, role="admin")
-        db.add(db_user)
-        db.commit()
-        print("Created default admin user: admin / admin123")
-    db.close()
-    
-    # Keep Alive Mechanism
-    import threading
-    import time
-    import requests
-    
-    def keep_alive():
-        url = os.getenv("BACKEND_URL")
-        if url:
-            print(f"Starting keep-alive for {url}")
-            while True:
-                try:
-                    time.sleep(14 * 60) # 14 minutes
-                    print(f"Pinging {url} to keep alive...")
-                    requests.get(f"{url}/health")
-                except Exception as e:
-                    print(f"Keep-alive ping failed: {e}")
-        else:
-            print("No BACKEND_URL set, skipping keep-alive.")
 
-    threading.Thread(target=keep_alive, daemon=True).start()
 
 
 @app.get("/admin/dashboard-stats", response_model=schemas.DashboardStats)
@@ -452,7 +441,7 @@ def migrate_db(db: Session = Depends(get_db), current_user: models.User = Depend
             pass
         
         db.commit()
-        return {"status": "success", "details": results}
+        return {"status": "success"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
