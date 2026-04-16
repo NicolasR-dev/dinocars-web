@@ -257,7 +257,7 @@ export default function UserManagement({ currentUser }: { currentUser: any }) {
                     <User className="text-indigo-400" />
                     Gestión de Usuarios y Horarios
                 </h3>
-                {currentUser.role === 'admin' && (
+                {(currentUser.role === 'admin' || currentUser.role === 'manager') && (
                     <div className="flex gap-2">
                         <button
                             onClick={() => setIsBulkModalOpen(true)}
@@ -369,76 +369,75 @@ export default function UserManagement({ currentUser }: { currentUser: any }) {
 
                                 {/* Grid Rows */}
                                 <div className="space-y-1">
-                                    {users.filter(user => user.role !== 'admin').map(user => (
-                                        <div key={user.id} className="grid grid-cols-8 gap-1 items-center">
-                                            {/* User Info */}
-                                            <div className="p-2 bg-slate-800/30 rounded-lg border border-slate-700/50 h-full flex flex-col justify-center">
-                                                <span className="font-bold text-sm text-white truncate">{user.username}</span>
-                                                <span className="text-[10px] text-slate-400">{getUserTotalHours(user.schedules || []).toFixed(1)}h</span>
-                                            </div>
-
-                                            {/* Days */}
-                                            {weekDates.map(date => {
-                                                const dateStr = toLocalDateStr(date);
-                                                const userSchedule = schedules.find(s => s.user.id === user.id && s.date === dateStr);
-
-                                                return (
-                                                    <div
-                                                        key={`${user.id}-${dateStr}`}
-                                                        className={`h-12 rounded-lg border transition-all relative group ${userSchedule
-                                                            ? `${user.color} border-white/10`
-                                                            : 'bg-slate-800/20 border-slate-700/30 hover:bg-slate-800/50 cursor-pointer'}`}
-                                                        onClick={() => {
-                                                            if (!userSchedule && (currentUser.role === 'admin' || currentUser.role === 'manager')) {
-                                                                console.log('Selected User:', user); // DEBUG
-                                                                setSelectedUserForSchedule(user);
-                                                                setNewSchedule({
-                                                                    date: dateStr,
-                                                                    start_time: user.default_start_time || '09:00',
-                                                                    end_time: user.default_end_time || '18:00'
-                                                                });
-                                                            }
-                                                        }}
-                                                    >
-                                                        {userSchedule ? (
-                                                            <div className="h-full flex flex-col items-center justify-center p-1 relative">
-                                                                {(() => {
-                                                                    const badge = getShiftBadge(userSchedule.start_time, userSchedule.end_time);
-                                                                    if (badge) {
-                                                                        return (
-                                                                            <div className={`absolute top-0.5 right-0.5 w-4 h-4 rounded-full ${badge.color} text-[10px] font-bold text-white flex items-center justify-center shadow-lg border border-white/20`} title={badge.full}>
-                                                                                {badge.label}
-                                                                            </div>
-                                                                        );
-                                                                    }
-                                                                    return null;
-                                                                })()}
-                                                                <span className="text-xs font-bold text-white">{userSchedule.start_time}</span>
-                                                                <span className="text-xs font-bold text-white/80">{userSchedule.end_time}</span>
-                                                                {(currentUser.role === 'admin' || currentUser.role === 'manager') && (
-                                                                    <button
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            handleDeleteSchedule(userSchedule.id);
-                                                                        }}
-                                                                        className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
-                                                                    >
-                                                                        <X className="w-3 h-3" />
-                                                                    </button>
-                                                                )}
-                                                            </div>
-                                                        ) : (
-                                                            (currentUser.role === 'admin' || currentUser.role === 'manager') && (
-                                                                <div className="h-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                    <Plus className="w-4 h-4 text-slate-500" />
-                                                                </div>
-                                                            )
-                                                        )}
-                                                    </div>
-                                                );
-                                            })}
+                                {users.filter(user => user.role !== 'admin').map(user => (
+                                    <div key={user.id} className="grid grid-cols-8 gap-1 items-center">
+                                        {/* User Info */}
+                                        <div className="p-2 bg-slate-800/30 rounded-lg border border-slate-700/50 h-full flex flex-col justify-center">
+                                            <span className="font-bold text-sm text-white truncate">{user.username}</span>
+                                            <span className="text-[10px] text-slate-400">{getUserTotalHours(user.schedules || []).toFixed(1)}h</span>
                                         </div>
-                                    ))}
+
+                                        {/* Days */}
+                                        {weekDates.map(date => {
+                                            const dateStr = toLocalDateStr(date);
+                                            const userSchedule = schedules.find(s => s.user.id === user.id && s.date === dateStr);
+
+                                            return (
+                                                <div
+                                                    key={`${user.id}-${dateStr}`}
+                                                    className={`h-12 rounded-lg border transition-all relative group ${userSchedule
+                                                        ? `${user.color} border-white/10 shadow-lg`
+                                                        : 'bg-slate-800/20 border-slate-700/30 hover:bg-slate-800/50 cursor-pointer'}`}
+                                                    onClick={() => {
+                                                        if (!userSchedule && (currentUser.role === 'admin' || currentUser.role === 'manager')) {
+                                                            setSelectedUserForSchedule(user);
+                                                            setNewSchedule({
+                                                                date: dateStr,
+                                                                start_time: user.default_start_time || '09:00',
+                                                                end_time: user.default_end_time || '18:00'
+                                                            });
+                                                        }
+                                                    }}
+                                                >
+                                                    {userSchedule ? (
+                                                        <div className="h-full flex flex-col items-center justify-center p-1 relative">
+                                                            {(() => {
+                                                                const badge = getShiftBadge(userSchedule.start_time, userSchedule.end_time);
+                                                                if (badge) {
+                                                                    return (
+                                                                        <div className={`absolute top-0.5 right-0.5 w-4 h-4 rounded-full ${badge.color} text-[10px] font-bold text-white flex items-center justify-center shadow-lg border border-white/20`} title={badge.full}>
+                                                                            {badge.label}
+                                                                        </div>
+                                                                    );
+                                                                }
+                                                                return null;
+                                                            })()}
+                                                            <span className="text-xs font-bold text-white leading-none">{userSchedule.start_time}</span>
+                                                            <span className="text-xs font-bold text-white/70 leading-none">{userSchedule.end_time}</span>
+                                                            {(currentUser.role === 'admin' || currentUser.role === 'manager') && (
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        handleDeleteSchedule(userSchedule.id);
+                                                                    }}
+                                                                    className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                                                                >
+                                                                    <X className="w-3 h-3" />
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    ) : (
+                                                        (currentUser.role === 'admin' || currentUser.role === 'manager') && (
+                                                            <div className="h-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                <Plus className="w-4 h-4 text-slate-500" />
+                                                            </div>
+                                                        )
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                ))}
                                 </div>
                             </div>
                         ) : (

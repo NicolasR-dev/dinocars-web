@@ -122,9 +122,12 @@ export default function Dashboard() {
 
   if (!user) return null;
 
-  const visibleTabs = user.role === 'admin' || user.role === 'manager'
-    ? TABS
-    : TABS.filter(t => t.id !== 'users');
+  const visibleTabs = TABS.map(tab => {
+    if (tab.id === 'users' && user.role !== 'admin' && user.role !== 'manager') {
+      return { ...tab, label: 'Horarios' };
+    }
+    return tab;
+  });
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100">
