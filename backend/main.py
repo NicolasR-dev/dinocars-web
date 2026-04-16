@@ -34,6 +34,7 @@ def startup_event():
             ("daily_records", "worker_name VARCHAR"),
             ("daily_records", "toys_sold_details VARCHAR"),
             ("daily_records", "toys_sold_total FLOAT"),
+            ("daily_records", "submitted_by VARCHAR"),
         ]
         
         for table, col_def in columns_to_add:
@@ -41,7 +42,7 @@ def startup_event():
                 db.execute(text(f"ALTER TABLE {table} ADD COLUMN {col_def}"))
                 db.commit()
             except Exception:
-                db.rollback() # Ignores errors if column already exists
+                db.rollback() 
 
         # Check if admin exists
         admin = db.query(models.User).filter(models.User.role == "admin").first()
@@ -88,7 +89,8 @@ def startup_event():
 origins = [
     "http://localhost:3000",
     "https://dinocars-web.vercel.app",
-    "https://dinocars-web-nicolasr-devs-projects.vercel.app", # Potential secondary Vercel URL
+    "https://dinocars-web-nicolasr-devs-projects.vercel.app",
+    "https://dinocars-web-git-main-nicolasr-devs-projects.vercel.app",
     "https://dinocars-web.onrender.com"
 ]
 app.add_middleware(
