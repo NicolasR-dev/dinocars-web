@@ -104,6 +104,29 @@ export default function Dashboard() {
     } catch { router.push('/login'); }
   }, [router]);
 
+  // Si el teléfono deja la pestaña "congelada" en segundo plano por un buen rato,
+  // al volver puede quedar una petición a medias y la UI se ve trabada (botones que no responden, etc).
+  // En vez de obligar a cerrar/abrir sesión, recargamos solo si estuvo oculta más de 3 minutos.
+  useEffect(() => {
+    let hiddenAt: number | null = null;
+    const STALE_THRESHOLD_MS = 3 * 60 * 1000;
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        hiddenAt = Date.now();
+      } else if (document.visibilityState === 'visible' && hiddenAt !== null) {
+        const hiddenFor = Date.now() - hiddenAt;
+        hiddenAt = null;
+        if (hiddenFor > STALE_THRESHOLD_MS) {
+          window.location.reload();
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
   const loadHistory = async (month: string) => {
     try {
       const res = await api.get('/records/', { params: { month } });

@@ -10,7 +10,7 @@ from . import models, schemas, database
 # SECRET_KEY should be in env vars in production, but hardcoded for this local tool as requested
 SECRET_KEY = "dinocars_secret_key_change_me"
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 # 24 hours
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7 # 7 days
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
