@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Bell, BellOff, BellRing } from 'lucide-react';
+import { Bell, BellOff, BellRing, Send } from 'lucide-react';
 import api from '@/lib/api';
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
@@ -17,9 +17,10 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
 
 type Status = 'unsupported' | 'checking' | 'off' | 'on' | 'denied';
 
-export default function PushNotifications() {
+export default function PushNotifications({ isAdmin }: { isAdmin?: boolean }) {
     const [status, setStatus] = useState<Status>('checking');
     const [busy, setBusy] = useState(false);
+    const [testing, setTesting] = useState(false);
 
     useEffect(() => {
         const check = async () => {
@@ -96,6 +97,19 @@ export default function PushNotifications() {
         }
     };
 
+    const handleTest = async () => {
+        setTesting(true);
+        try {
+            await api.post('/push/test');
+            alert('Notificaciones de prueba enviadas a todas las suscripciones activas.');
+        } catch (e) {
+            console.error(e);
+            alert('No se pudo enviar la prueba (revisa que VAPID_PRIVATE_KEY esté configurada en el backend).');
+        } finally {
+            setTesting(false);
+        }
+    };
+
     if (status === 'unsupported' || status === 'checking') return null;
 
     if (status === 'denied') {
@@ -108,16 +122,30 @@ export default function PushNotifications() {
     }
 
     return (
-        <button
-            onClick={status === 'on' ? handleDisable : handleEnable}
-            disabled={busy}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${status === 'on'
-                ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25'
-                : 'bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700'
-                }`}
-        >
-            {status === 'on' ? <BellRing className="w-3.5 h-3.5" /> : <Bell className="w-3.5 h-3.5" />}
-            <span className="hidden sm:inline">{status === 'on' ? 'Notificaciones activadas' : 'Activar notificaciones'}</span>
-        </button>
+        <div className="flex items-center gap-2">
+            <button
+                onClick={status === 'on' ? handleDisable : handleEnable}
+                disabled={busy}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${status === 'on'
+                    ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25'
+                    : 'bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700'
+                    }`}
+            >
+                {status === 'on' ? <BellRing className="w-3.5 h-3.5" /> : <Bell className="w-3.5 h-3.5" />}
+                <span className="hidden sm:inline">{status === 'on' ? 'Notificaciones activadas' : 'Activar notificaciones'}</span>
+            </button>
+
+            {isAdmin && status === 'on' && (
+                <button
+                    onClick={handleTest}
+                    disabled={testing}
+                    title="Enviar ambas notificaciones ahora mismo, sin esperar a las 22:00/16:00"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-cyan-500/15 text-cyan-400 border border-cyan-500/30 hover:bg-cyan-500/25 transition-colors"
+                >
+                    <Send className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Probar ahora</span>
+                </button>
+            )}
+        </div>
     );
 }

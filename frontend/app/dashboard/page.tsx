@@ -173,7 +173,7 @@ export default function Dashboard() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <PushNotifications />
+          <PushNotifications isAdmin={user.role === 'admin'} />
           <button onClick={handleLogout} className="p-2 hover:bg-white/10 rounded-full transition-colors" title="Cerrar sesión">
             <LogOut className="w-5 h-5 text-slate-400 hover:text-white" />
           </button>

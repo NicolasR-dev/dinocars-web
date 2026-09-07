@@ -495,6 +495,16 @@ def unsubscribe_push(
     db.commit()
     return {"ok": True}
 
+@app.post("/push/test")
+def test_push_notifications(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_active_admin),
+):
+    """Dispara ambas notificaciones de inmediato, para probar sin esperar a las 22:00/16:00."""
+    push.notify_tomorrow_shifts(db)
+    push.notify_monthly_goal(db)
+    return {"ok": True, "message": "Notificaciones de prueba enviadas"}
+
 # User Management Endpoints
 @app.post("/users/", response_model=schemas.User)
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_active_admin)):
