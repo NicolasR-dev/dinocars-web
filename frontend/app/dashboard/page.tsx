@@ -12,6 +12,7 @@ import RecordDetailModal from '@/components/RecordDetailModal';
 import UserManagement from '@/components/UserManagement';
 import ScheduleManager from '@/components/ScheduleManager';
 import WorkerSchedule from '@/components/WorkerSchedule';
+import PushNotifications from '@/components/PushNotifications';
 import api from '@/lib/api';
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -171,9 +172,12 @@ export default function Dashboard() {
           })}
         </nav>
 
-        <button onClick={handleLogout} className="p-2 hover:bg-white/10 rounded-full transition-colors" title="Cerrar sesión">
-          <LogOut className="w-5 h-5 text-slate-400 hover:text-white" />
-        </button>
+        <div className="flex items-center gap-2">
+          <PushNotifications />
+          <button onClick={handleLogout} className="p-2 hover:bg-white/10 rounded-full transition-colors" title="Cerrar sesión">
+            <LogOut className="w-5 h-5 text-slate-400 hover:text-white" />
+          </button>
+        </div>
       </header>
 
       {/* ── Main content ── */}

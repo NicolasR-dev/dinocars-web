@@ -8,12 +8,37 @@ import pandas as pd
 import os
 from datetime import timedelta, datetime
 
-from . import models, schemas, database, auth
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.cron import CronTrigger
+
+from . import models, schemas, database, auth, push
 
 # Create tables
 models.Base.metadata.create_all(bind=database.engine)
 
 app = FastAPI(title="DinoCars API")
+
+scheduler = BackgroundScheduler(timezone="America/Santiago")
+
+
+def run_notify_tomorrow_shifts():
+    db = database.SessionLocal()
+    try:
+        push.notify_tomorrow_shifts(db)
+    except Exception as e:
+        print(f"Error sending tomorrow-shift notifications: {e}")
+    finally:
+        db.close()
+
+
+def run_notify_monthly_goal():
+    db = database.SessionLocal()
+    try:
+        push.notify_monthly_goal(db)
+    except Exception as e:
+        print(f"Error sending monthly-goal notifications: {e}")
+    finally:
+        db.close()
 
 # Auto-Seed Admin and Keep-Alive on Startup
 @app.on_event("startup")
@@ -95,6 +120,23 @@ def startup_event():
             print("No BACKEND_URL set, skipping keep-alive.")
 
     threading.Thread(target=keep_alive, daemon=True).start()
+
+    # Push Notification Schedules (hora de Chile)
+    if not scheduler.running:
+        scheduler.add_job(
+            run_notify_tomorrow_shifts,
+            CronTrigger(hour=22, minute=0),
+            id="notify_tomorrow_shifts",
+            replace_existing=True,
+        )
+        scheduler.add_job(
+            run_notify_monthly_goal,
+            CronTrigger(hour=16, minute=0),
+            id="notify_monthly_goal",
+            replace_existing=True,
+        )
+        scheduler.start()
+        print("Push notification scheduler started (22:00 turnos, 16:00 meta).")
 
 # CORS
 origins = [
@@ -415,6 +457,43 @@ def create_bulk_schedule(bulk_data: schemas.BulkScheduleCreate, db: Session = De
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
+
+# --- Push Notifications ---
+
+@app.get("/push/vapid-public-key")
+def get_vapid_public_key():
+    return {"key": os.getenv("VAPID_PUBLIC_KEY", "")}
+
+@app.post("/push/subscribe")
+def subscribe_push(
+    sub: schemas.PushSubscriptionCreate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+):
+    existing = db.query(models.PushSubscription).filter(models.PushSubscription.endpoint == sub.endpoint).first()
+    if existing:
+        existing.user_id = current_user.id
+        existing.p256dh = sub.keys.p256dh
+        existing.auth = sub.keys.auth
+    else:
+        db.add(models.PushSubscription(
+            user_id=current_user.id,
+            endpoint=sub.endpoint,
+            p256dh=sub.keys.p256dh,
+            auth=sub.keys.auth,
+        ))
+    db.commit()
+    return {"ok": True}
+
+@app.post("/push/unsubscribe")
+def unsubscribe_push(
+    sub: schemas.PushSubscriptionCreate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+):
+    db.query(models.PushSubscription).filter(models.PushSubscription.endpoint == sub.endpoint).delete()
+    db.commit()
+    return {"ok": True}
 
 # User Management Endpoints
 @app.post("/users/", response_model=schemas.User)

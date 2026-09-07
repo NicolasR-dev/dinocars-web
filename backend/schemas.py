@@ -108,6 +108,16 @@ class DashboardStats(BaseModel):
     sales_by_weekday: List[dict] # { day: str, amount: float }
     top_workers: List[dict] # { name: str, total_rides: int, total_generated: float }
 
+class PushSubscriptionKeys(BaseModel):
+    p256dh: str
+    auth: str
+
+
+class PushSubscriptionCreate(BaseModel):
+    endpoint: str
+    keys: PushSubscriptionKeys
+
+
 class BulkScheduleCreate(BaseModel):
     user_id: int
     start_date: str # YYYY-MM-DD

@@ -60,3 +60,16 @@ class DailyRecord(Base):
     
     worker_name = Column(String, nullable=True) # Nicolas, Catalina, Josefa, Otro
     submitted_by = Column(String)
+
+
+class PushSubscription(Base):
+    __tablename__ = "push_subscriptions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    endpoint = Column(String, unique=True, index=True)
+    p256dh = Column(String)
+    auth = Column(String)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User")
