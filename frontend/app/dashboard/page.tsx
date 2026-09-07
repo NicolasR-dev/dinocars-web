@@ -4,12 +4,14 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { jwtDecode } from 'jwt-decode';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LogOut, Calculator, DollarSign, History, Users, ChevronRight, TrendingUp } from 'lucide-react';
+import { LogOut, Calculator, DollarSign, History, Users, Calendar, ChevronRight, TrendingUp } from 'lucide-react';
 import Image from 'next/image';
 import CalcularVueltas from '@/components/CalcularVueltas';
 import CuadrarCaja from '@/components/CuadrarCaja';
 import RecordDetailModal from '@/components/RecordDetailModal';
 import UserManagement from '@/components/UserManagement';
+import ScheduleManager from '@/components/ScheduleManager';
+import WorkerSchedule from '@/components/WorkerSchedule';
 import api from '@/lib/api';
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -31,6 +33,7 @@ const TABS = [
   { id: 'caja', label: 'Caja', icon: DollarSign },
   { id: 'history', label: 'Historial', icon: History },
   { id: 'users', label: 'Usuarios', icon: Users },
+  { id: 'schedule', label: 'Horarios', icon: Calendar },
 ];
 
 // ── history record card (mobile) ──────────────────────────────────────────────
@@ -122,12 +125,16 @@ export default function Dashboard() {
 
   if (!user) return null;
 
-  const visibleTabs = TABS.map(tab => {
-    if (tab.id === 'users' && user.role !== 'admin' && user.role !== 'manager') {
-      return { ...tab, label: 'Horarios' };
-    }
-    return tab;
-  });
+  const isAdminOrManager = user.role === 'admin' || user.role === 'manager';
+
+  const visibleTabs = TABS
+    .filter(tab => tab.id !== 'schedule' || isAdminOrManager)
+    .map(tab => {
+      if (tab.id === 'users' && !isAdminOrManager) {
+        return { ...tab, label: 'Horarios' };
+      }
+      return tab;
+    });
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100">
@@ -292,10 +299,21 @@ export default function Dashboard() {
               </section>
             )}
 
-            {/* ── Usuarios ── */}
+            {/* ── Usuarios / Horarios (worker) ── */}
             {activeTab === 'users' && (
               <section className="glass-card p-5 sm:p-6 rounded-2xl">
-                <UserManagement currentUser={user} />
+                {isAdminOrManager ? (
+                  <UserManagement currentUser={user} />
+                ) : (
+                  <WorkerSchedule currentUser={user} />
+                )}
+              </section>
+            )}
+
+            {/* ── Horarios (admin/manager) ── */}
+            {activeTab === 'schedule' && isAdminOrManager && (
+              <section className="glass-card p-5 sm:p-6 rounded-2xl">
+                <ScheduleManager currentUser={user} />
               </section>
             )}
           </motion.div>
