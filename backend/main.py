@@ -464,6 +464,24 @@ def create_bulk_schedule(bulk_data: schemas.BulkScheduleCreate, db: Session = De
 def health_check():
     return {"status": "ok"}
 
+@app.get("/debug-time")
+def debug_time():
+    from zoneinfo import ZoneInfo
+    import tzdata as _tzdata_pkg
+    now_utc = datetime.utcnow().replace(tzinfo=__import__("datetime").timezone.utc)
+    santiago = now_utc.astimezone(ZoneInfo("America/Santiago"))
+    return {
+        "utc": now_utc.isoformat(),
+        "santiago": santiago.isoformat(),
+        "utc_offset": str(santiago.utcoffset()),
+        "dst_active": str(santiago.dst()),
+        "scheduler_running": scheduler.running,
+        "scheduler_jobs": [
+            {"id": j.id, "next_run": str(j.next_run_time)} for j in scheduler.get_jobs()
+        ],
+        "tzdata_package_version": getattr(_tzdata_pkg, "IANA_VERSION", "unknown"),
+    }
+
 # --- Push Notifications ---
 
 @app.get("/push/vapid-public-key")
