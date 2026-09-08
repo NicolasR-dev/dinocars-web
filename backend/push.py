@@ -73,13 +73,13 @@ def notify_tomorrow_shifts(db: Session):
     _prune_dead_subscriptions(db, dead_ids)
 
 
-def notify_cash_closed(db: Session, record: models.DailyRecord):
+def notify_cash_closed(db: Session, record, sample: bool = False):
     """Avisa a los usuarios con rol 'owner' cada vez que se cierra una caja."""
     total = record.daily_cash_generated or 0.0
     rides = record.rides_today or 0
 
     payload = {
-        "title": "💰 Caja cerrada",
+        "title": "💰 Caja cerrada (ejemplo)" if sample else "💰 Caja cerrada",
         "body": f"Total del día: ${total:,.0f} — Vueltas: {rides}".replace(",", "."),
         "tag": "cash-closed",
     }

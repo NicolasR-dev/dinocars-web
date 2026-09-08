@@ -125,13 +125,13 @@ def startup_event():
     if not scheduler.running:
         scheduler.add_job(
             run_notify_tomorrow_shifts,
-            CronTrigger(hour=22, minute=0),
+            CronTrigger(hour=22, minute=0, timezone="America/Santiago"),
             id="notify_tomorrow_shifts",
             replace_existing=True,
         )
         scheduler.add_job(
             run_notify_monthly_goal,
-            CronTrigger(hour=16, minute=0),
+            CronTrigger(hour=16, minute=0, timezone="America/Santiago"),
             id="notify_monthly_goal",
             replace_existing=True,
         )
@@ -524,9 +524,15 @@ def test_push_notifications(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth.get_current_active_admin),
 ):
-    """Dispara ambas notificaciones de inmediato, para probar sin esperar a las 22:00/16:00."""
+    """Dispara todas las notificaciones de inmediato, para probar sin esperar a las 22:00/16:00."""
+    from types import SimpleNamespace
+
     push.notify_tomorrow_shifts(db)
     push.notify_monthly_goal(db)
+
+    sample_record = SimpleNamespace(daily_cash_generated=185000, rides_today=42)
+    push.notify_cash_closed(db, sample_record, sample=True)
+
     return {"ok": True, "message": "Notificaciones de prueba enviadas"}
 
 # User Management Endpoints
