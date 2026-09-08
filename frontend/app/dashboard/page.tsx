@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { jwtDecode } from 'jwt-decode';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LogOut, Calculator, DollarSign, History, Users, Calendar, ChevronRight, TrendingUp } from 'lucide-react';
+import { LogOut, Calculator, DollarSign, History, Users, Calendar, BarChart3, ChevronRight, TrendingUp } from 'lucide-react';
 import Image from 'next/image';
 import CalcularVueltas from '@/components/CalcularVueltas';
 import CuadrarCaja from '@/components/CuadrarCaja';
@@ -13,6 +13,7 @@ import UserManagement from '@/components/UserManagement';
 import ScheduleManager from '@/components/ScheduleManager';
 import WorkerSchedule from '@/components/WorkerSchedule';
 import PushNotifications from '@/components/PushNotifications';
+import AdminDashboard from '@/components/AdminDashboard';
 import api from '@/lib/api';
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -35,6 +36,7 @@ const TABS = [
   { id: 'history', label: 'Historial', icon: History },
   { id: 'users', label: 'Usuarios', icon: Users },
   { id: 'schedule', label: 'Horarios', icon: Calendar },
+  { id: 'stats', label: 'Estadísticas', icon: BarChart3 },
 ];
 
 // ── history record card (mobile) ──────────────────────────────────────────────
@@ -155,7 +157,8 @@ export default function Dashboard() {
 
   const visibleTabs = TABS
     .filter(tab => {
-      if (isOwner) return tab.id === 'history';
+      if (isOwner) return tab.id === 'history' || tab.id === 'stats';
+      if (tab.id === 'stats') return false; // admin ya accede a esto desde el toggle interno en Usuarios
       return tab.id !== 'schedule' || isAdminOrManager;
     })
     .map(tab => {
@@ -346,6 +349,13 @@ export default function Dashboard() {
             {activeTab === 'schedule' && isAdminOrManager && (
               <section className="glass-card p-5 sm:p-6 rounded-2xl">
                 <ScheduleManager currentUser={user} />
+              </section>
+            )}
+
+            {/* ── Estadísticas (owner) ── */}
+            {activeTab === 'stats' && isOwner && (
+              <section className="glass-card p-5 sm:p-6 rounded-2xl">
+                <AdminDashboard />
               </section>
             )}
           </motion.div>

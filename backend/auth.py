@@ -64,3 +64,8 @@ async def get_current_active_admin(current_user: models.User = Depends(get_curre
     if current_user.role != "admin":
         raise HTTPException(status_code=400, detail="Inactive user or not admin")
     return current_user
+
+async def get_current_admin_or_owner(current_user: models.User = Depends(get_current_user)):
+    if current_user.role not in ("admin", "owner"):
+        raise HTTPException(status_code=403, detail="Not authorized")
+    return current_user

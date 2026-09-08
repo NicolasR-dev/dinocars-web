@@ -303,7 +303,7 @@ def delete_record(record_id: int, db: Session = Depends(get_db), current_user: m
 
 
 @app.get("/admin/dashboard-stats", response_model=schemas.DashboardStats)
-def get_dashboard_stats(db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_active_admin)):
+def get_dashboard_stats(db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_admin_or_owner)):
     try:
         records = db.query(models.DailyRecord).order_by(models.DailyRecord.date.asc()).all()
         
