@@ -1,12 +1,22 @@
 import os
 import json
-from datetime import date, timedelta
+from datetime import timedelta, datetime
 from calendar import monthrange
+from zoneinfo import ZoneInfo
 
 from pywebpush import webpush, WebPushException
 from sqlalchemy.orm import Session
 
 from . import models, schedule_rules
+
+CHILE_TZ = ZoneInfo("America/Santiago")
+
+
+def today_in_chile():
+    """date.today() usa la hora del sistema (UTC en Render), lo que hace que
+    'hoy' ya sea el día siguiente en cuanto pasan las 21:00 hora de Chile.
+    Siempre calcular la fecha de calendario a partir de la hora de Chile."""
+    return datetime.now(CHILE_TZ).date()
 
 VAPID_PRIVATE_KEY = os.getenv("VAPID_PRIVATE_KEY")
 VAPID_CLAIM_EMAIL = os.getenv("VAPID_CLAIM_EMAIL", "mailto:admin@dinocars.local")
@@ -47,7 +57,7 @@ def _prune_dead_subscriptions(db: Session, dead_ids: list):
 
 
 def notify_tomorrow_shifts(db: Session):
-    tomorrow = date.today() + timedelta(days=1)
+    tomorrow = today_in_chile() + timedelta(days=1)
     subscriptions = db.query(models.PushSubscription).join(models.User).all()
     dead_ids = []
 
@@ -95,7 +105,7 @@ def notify_cash_closed(db: Session, record, sample: bool = False):
 
 
 def notify_monthly_goal(db: Session):
-    today = date.today()
+    today = today_in_chile()
     month_prefix = today.strftime("%Y-%m")
     days_in_month = monthrange(today.year, today.month)[1]
     days_left = days_in_month - today.day
