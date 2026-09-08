@@ -73,6 +73,27 @@ def notify_tomorrow_shifts(db: Session):
     _prune_dead_subscriptions(db, dead_ids)
 
 
+def notify_cash_closed(db: Session, record: models.DailyRecord):
+    """Avisa a los usuarios con rol 'owner' cada vez que se cierra una caja."""
+    total = record.daily_cash_generated or 0.0
+    rides = record.rides_today or 0
+
+    payload = {
+        "title": "💰 Caja cerrada",
+        "body": f"Total del día: ${total:,.0f} — Vueltas: {rides}".replace(",", "."),
+        "tag": "cash-closed",
+    }
+
+    subscriptions = (
+        db.query(models.PushSubscription)
+        .join(models.User)
+        .filter(models.User.role == "owner")
+        .all()
+    )
+    dead_ids = [sub.id for sub in subscriptions if not _send(sub, payload)]
+    _prune_dead_subscriptions(db, dead_ids)
+
+
 def notify_monthly_goal(db: Session):
     today = date.today()
     month_prefix = today.strftime("%Y-%m")

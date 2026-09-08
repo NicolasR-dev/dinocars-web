@@ -100,6 +100,7 @@ export default function Dashboard() {
     try {
       const decoded: any = jwtDecode(token);
       setUser({ ...decoded, username: decoded.sub });
+      if (decoded.role === 'owner') setActiveTab('history');
       loadHistory(new Date().toISOString().slice(0, 7));
     } catch { router.push('/login'); }
   }, [router]);
@@ -150,9 +151,13 @@ export default function Dashboard() {
   if (!user) return null;
 
   const isAdminOrManager = user.role === 'admin' || user.role === 'manager';
+  const isOwner = user.role === 'owner';
 
   const visibleTabs = TABS
-    .filter(tab => tab.id !== 'schedule' || isAdminOrManager)
+    .filter(tab => {
+      if (isOwner) return tab.id === 'history';
+      return tab.id !== 'schedule' || isAdminOrManager;
+    })
     .map(tab => {
       if (tab.id === 'users' && !isAdminOrManager) {
         return { ...tab, label: 'Horarios' };

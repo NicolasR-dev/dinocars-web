@@ -257,6 +257,12 @@ def create_daily_record(record: schemas.DailyRecordCreate, db: Session = Depends
     db.add(db_record)
     db.commit()
     db.refresh(db_record)
+
+    try:
+        push.notify_cash_closed(db, db_record)
+    except Exception as e:
+        print(f"Error sending cash-closed notification: {e}")
+
     return db_record
 
 @app.get("/records/", response_model=List[schemas.DailyRecord])

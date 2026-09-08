@@ -176,7 +176,8 @@ export default function UserManagement({ currentUser }: { currentUser: any }) {
                                         <h4 className="font-bold text-white">{user.username}</h4>
                                         <span className={`text-xs px-2 py-0.5 rounded-full uppercase font-bold ${user.role === 'admin' ? 'bg-purple-500/20 text-purple-400' :
                                             user.role === 'manager' ? 'bg-cyan-500/20 text-cyan-400' :
-                                                'bg-slate-500/20 text-slate-400'
+                                                user.role === 'owner' ? 'bg-yellow-500/20 text-yellow-400' :
+                                                    'bg-slate-500/20 text-slate-400'
                                             }`}>
                                             {user.role}
                                         </span>
@@ -241,6 +242,7 @@ export default function UserManagement({ currentUser }: { currentUser: any }) {
                                         <option value="worker">Trabajador</option>
                                         <option value="manager">Encargado</option>
                                         <option value="admin">Administrador</option>
+                                        <option value="owner">Dueño</option>
                                     </select>
                                 </div>
 
