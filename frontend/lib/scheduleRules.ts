@@ -37,7 +37,7 @@ const BELSY: WeekSchedule = {
 };
 
 const JOSEFA: WeekSchedule = {
-    Wednesday: shift('14:00', '20:00'),
+    Wednesday: shift('13:00', '20:00'),
     Saturday: shift('10:00', '17:30'),
     Sunday: shift('13:00', '20:00'),
 };

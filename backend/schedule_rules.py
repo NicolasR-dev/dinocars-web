@@ -21,7 +21,7 @@ BELSY = {
 }
 
 JOSEFA = {
-    "Wednesday": _shift("14:00", "20:00"),
+    "Wednesday": _shift("13:00", "20:00"),
     "Saturday": _shift("10:00", "17:30"),
     "Sunday": _shift("13:00", "20:00"),
 }
