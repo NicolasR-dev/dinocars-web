@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Calendar, Clock, X, ChevronLeft, ChevronRight, Wand2 } from 'lucide-react';
 import api from '@/lib/api';
 import MonthlyScheduleView from './MonthlyScheduleView';
+import { getWeekSchedule, matchWorkerKey, calcHours as calcFixedHours, WeekdayKey } from '@/lib/scheduleRules';
 
 const DAYS_ES = {
     'Monday': 'Lunes',
@@ -124,19 +125,24 @@ export default function ScheduleManager({ currentUser }: { currentUser: any }) {
         return null;
     };
 
-    const getUserTotalHours = (userSchedules: any[]) => {
-        // Filter schedules for the current week using LOCAL date strings
-        const weekEnd = new Date(currentWeekStart);
-        weekEnd.setDate(weekEnd.getDate() + 6);
+    // Belsy, Josefa, Eloisa y Taahirah tienen un horario fijo (ver lib/scheduleRules.ts) que no vive
+    // en la base de datos. Si no hay un turno manual guardado para ese día, mostramos ese horario base.
+    const getFixedShift = (user: any, date: Date) => {
+        const key = matchWorkerKey(user.username);
+        if (!key) return null;
+        const monday = getMonday(date);
+        const dayName = date.toLocaleDateString('en-US', { weekday: 'long' }) as WeekdayKey;
+        return getWeekSchedule(monday)[key]?.[dayName] || null;
+    };
 
-        const startStr = toLocalDateStr(currentWeekStart);
-        const endStr = toLocalDateStr(weekEnd);
-
-        const weeklySchedules = userSchedules.filter((s: any) => {
-            return s.date >= startStr && s.date <= endStr;
-        });
-
-        return weeklySchedules.reduce((acc: number, curr: any) => acc + calculateHours(curr.start_time, curr.end_time), 0);
+    const getCombinedTotalHours = (user: any) => {
+        return weekDates.reduce((acc: number, date: Date) => {
+            const dateStr = toLocalDateStr(date);
+            const db = schedules.find((s: any) => s.user.id === user.id && s.date === dateStr);
+            if (db) return acc + calculateHours(db.start_time, db.end_time);
+            const fixed = getFixedShift(user, date);
+            return fixed ? acc + calcFixedHours(fixed) : acc;
+        }, 0);
     };
 
     const changeWeek = (offset: number) => {
@@ -176,10 +182,17 @@ export default function ScheduleManager({ currentUser }: { currentUser: any }) {
             {/* Global Visual Schedule */}
             <div className="glass p-4 sm:p-6 rounded-xl border border-slate-700">
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
-                    <h4 className="text-lg font-bold text-white flex items-center gap-2">
-                        <Calendar className="text-cyan-400" />
-                        Horario Global
-                    </h4>
+                    <div>
+                        <h4 className="text-lg font-bold text-white flex items-center gap-2">
+                            <Calendar className="text-cyan-400" />
+                            Horario Global
+                        </h4>
+                        {viewMode === 'weekly' && (
+                            <p className="text-[11px] text-slate-500 mt-0.5">
+                                Los turnos semi-transparentes son el horario fijo del equipo (no editables aquí).
+                            </p>
+                        )}
+                    </div>
                     <div className="flex flex-wrap items-center gap-2 sm:gap-4">
                         {viewMode === 'weekly' && (
                             <div className="flex items-center gap-2 bg-slate-800 rounded-lg p-1">
@@ -216,8 +229,8 @@ export default function ScheduleManager({ currentUser }: { currentUser: any }) {
                     <>
                         {/* Mobile: per-worker cards with tappable day chips (no horizontal scroll) */}
                         <div className="sm:hidden space-y-3">
-                            {users.filter(user => user.role !== 'admin').map(user => {
-                                const totalHours = getUserTotalHours(user.schedules || []);
+                            {users.filter(user => user.role !== 'admin' && user.role !== 'owner').map(user => {
+                                const totalHours = getCombinedTotalHours(user);
                                 return (
                                     <div key={user.id} className="glass-card rounded-xl p-3.5 border border-slate-700/50">
                                         <div className="flex items-center justify-between mb-2.5">
@@ -231,6 +244,7 @@ export default function ScheduleManager({ currentUser }: { currentUser: any }) {
                                             {weekDates.map(date => {
                                                 const dateStr = toLocalDateStr(date);
                                                 const userSchedule = schedules.find(s => s.user.id === user.id && s.date === dateStr);
+                                                const fixedShift = !userSchedule ? getFixedShift(user, date) : null;
                                                 const dayLabel = date.toLocaleDateString('es-ES', { weekday: 'short' }).replace('.', '');
                                                 const canEdit = currentUser.role === 'admin' || currentUser.role === 'manager';
 
@@ -246,6 +260,18 @@ export default function ScheduleManager({ currentUser }: { currentUser: any }) {
                                                                     <X className="w-3 h-3" />
                                                                 </button>
                                                             )}
+                                                        </span>
+                                                    );
+                                                }
+
+                                                if (fixedShift) {
+                                                    return (
+                                                        <span
+                                                            key={dateStr}
+                                                            title="Horario fijo (no editable aquí)"
+                                                            className={`text-[10px] font-bold px-2 py-1.5 rounded-md text-white opacity-80 ${user.color}`}
+                                                        >
+                                                            {dayLabel} {fixedShift.start}-{fixedShift.end}
                                                         </span>
                                                     );
                                                 }
@@ -295,27 +321,32 @@ export default function ScheduleManager({ currentUser }: { currentUser: any }) {
 
                         {/* Grid Rows */}
                         <div className="space-y-1">
-                            {users.filter(user => user.role !== 'admin').map(user => (
+                            {users.filter(user => user.role !== 'admin' && user.role !== 'owner').map(user => (
                                 <div key={user.id} className="grid grid-cols-8 gap-1 items-center">
                                     {/* User Info */}
                                     <div className="p-2 bg-slate-800/30 rounded-lg border border-slate-700/50 h-full flex flex-col justify-center">
                                         <span className="font-bold text-sm text-white truncate">{user.username}</span>
-                                        <span className="text-[10px] text-slate-400">{getUserTotalHours(user.schedules || []).toFixed(1)}h</span>
+                                        <span className="text-[10px] text-slate-400">{getCombinedTotalHours(user).toFixed(1)}h</span>
                                     </div>
 
                                     {/* Days */}
                                     {weekDates.map(date => {
                                         const dateStr = toLocalDateStr(date);
                                         const userSchedule = schedules.find(s => s.user.id === user.id && s.date === dateStr);
+                                        const fixedShift = !userSchedule ? getFixedShift(user, date) : null;
+                                        const canEdit = currentUser.role === 'admin' || currentUser.role === 'manager';
 
                                         return (
                                             <div
                                                 key={`${user.id}-${dateStr}`}
+                                                title={fixedShift ? 'Horario fijo (no editable aquí)' : undefined}
                                                 className={`h-12 rounded-lg border transition-all relative group ${userSchedule
                                                     ? `${user.color} border-white/10 shadow-lg`
-                                                    : 'bg-slate-800/20 border-slate-700/30 hover:bg-slate-800/50 cursor-pointer'}`}
+                                                    : fixedShift
+                                                        ? `${user.color} border-white/10 opacity-70`
+                                                        : 'bg-slate-800/20 border-slate-700/30 hover:bg-slate-800/50 cursor-pointer'}`}
                                                 onClick={() => {
-                                                    if (!userSchedule && (currentUser.role === 'admin' || currentUser.role === 'manager')) {
+                                                    if (!userSchedule && !fixedShift && canEdit) {
                                                         setSelectedUserForSchedule(user);
                                                         setNewSchedule({
                                                             date: dateStr,
@@ -340,7 +371,7 @@ export default function ScheduleManager({ currentUser }: { currentUser: any }) {
                                                         })()}
                                                         <span className="text-xs font-bold text-white leading-none">{userSchedule.start_time}</span>
                                                         <span className="text-xs font-bold text-white/70 leading-none">{userSchedule.end_time}</span>
-                                                        {(currentUser.role === 'admin' || currentUser.role === 'manager') && (
+                                                        {canEdit && (
                                                             <button
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
@@ -352,8 +383,13 @@ export default function ScheduleManager({ currentUser }: { currentUser: any }) {
                                                             </button>
                                                         )}
                                                     </div>
+                                                ) : fixedShift ? (
+                                                    <div className="h-full flex flex-col items-center justify-center p-1">
+                                                        <span className="text-xs font-bold text-white leading-none">{fixedShift.start}</span>
+                                                        <span className="text-xs font-bold text-white/70 leading-none">{fixedShift.end}</span>
+                                                    </div>
                                                 ) : (
-                                                    (currentUser.role === 'admin' || currentUser.role === 'manager') && (
+                                                    canEdit && (
                                                         <div className="h-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                                             <Plus className="w-4 h-4 text-slate-500" />
                                                         </div>
