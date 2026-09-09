@@ -56,6 +56,18 @@ def _prune_dead_subscriptions(db: Session, dead_ids: list):
     db.commit()
 
 
+def _team_tomorrow_digest(tomorrow) -> str:
+    """Resumen de los turnos de mañana de las 4 trabajadoras (para el admin, que no tiene turno propio)."""
+    lines = []
+    for key, info in schedule_rules.WORKER_NAMES.items():
+        shift = schedule_rules.get_shift_for_date(key, tomorrow)
+        if shift:
+            lines.append(f"{info}: {shift['start']}-{shift['end']}")
+        else:
+            lines.append(f"{info}: libre")
+    return " | ".join(lines)
+
+
 def notify_tomorrow_shifts(db: Session):
     tomorrow = today_in_chile() + timedelta(days=1)
     subscriptions = db.query(models.PushSubscription).join(models.User).all()
@@ -63,14 +75,18 @@ def notify_tomorrow_shifts(db: Session):
 
     for sub in subscriptions:
         worker_key = schedule_rules.match_worker_key(sub.user.username)
-        if not worker_key:
-            continue
 
-        shift = schedule_rules.get_shift_for_date(worker_key, tomorrow)
-        if shift:
-            body = f"Mañana entras a las {shift['start']} (hasta las {shift['end']})."
+        if worker_key:
+            shift = schedule_rules.get_shift_for_date(worker_key, tomorrow)
+            if shift:
+                body = f"Mañana entras a las {shift['start']} (hasta las {shift['end']})."
+            else:
+                body = "Mañana no trabajas, ¡a descansar!"
+        elif sub.user.role == "admin":
+            # El admin no tiene turno propio: le mandamos el resumen del equipo completo (para pruebas).
+            body = _team_tomorrow_digest(tomorrow)
         else:
-            body = "Mañana no trabajas, ¡a descansar!"
+            continue
 
         payload = {
             "title": "🦕 DinoCars — Tu turno de mañana",
@@ -84,7 +100,7 @@ def notify_tomorrow_shifts(db: Session):
 
 
 def notify_cash_closed(db: Session, record, sample: bool = False):
-    """Avisa a los usuarios con rol 'owner' cada vez que se cierra una caja."""
+    """Avisa a 'owner' (y a 'admin', para pruebas) cada vez que se cierra una caja."""
     total = record.daily_cash_generated or 0.0
     rides = record.rides_today or 0
 
@@ -97,7 +113,7 @@ def notify_cash_closed(db: Session, record, sample: bool = False):
     subscriptions = (
         db.query(models.PushSubscription)
         .join(models.User)
-        .filter(models.User.role == "owner")
+        .filter(models.User.role.in_(["owner", "admin"]))
         .all()
     )
     dead_ids = [sub.id for sub in subscriptions if not _send(sub, payload)]

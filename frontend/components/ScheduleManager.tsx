@@ -174,19 +174,19 @@ export default function ScheduleManager({ currentUser }: { currentUser: any }) {
             </div>
 
             {/* Global Visual Schedule */}
-            <div className="glass p-6 rounded-xl border border-slate-700 overflow-x-auto">
-                <div className="flex justify-between items-center mb-4 min-w-[800px]">
+            <div className="glass p-4 sm:p-6 rounded-xl border border-slate-700">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
                     <h4 className="text-lg font-bold text-white flex items-center gap-2">
                         <Calendar className="text-cyan-400" />
                         Horario Global
                     </h4>
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-4">
                         {viewMode === 'weekly' && (
                             <div className="flex items-center gap-2 bg-slate-800 rounded-lg p-1">
                                 <button onClick={() => changeWeek(-1)} className="p-1 hover:bg-white/10 rounded transition-colors">
                                     <ChevronLeft className="w-4 h-4 text-slate-400" />
                                 </button>
-                                <span className="text-xs font-bold text-slate-300 px-2">
+                                <span className="text-xs font-bold text-slate-300 px-2 whitespace-nowrap">
                                     {currentWeekStart.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} -
                                     {new Date(new Date(currentWeekStart).setDate(currentWeekStart.getDate() + 6)).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
                                 </span>
@@ -213,7 +213,71 @@ export default function ScheduleManager({ currentUser }: { currentUser: any }) {
                 </div>
 
                 {viewMode === 'weekly' ? (
-                    <div className="min-w-[800px]">
+                    <>
+                        {/* Mobile: per-worker cards with tappable day chips (no horizontal scroll) */}
+                        <div className="sm:hidden space-y-3">
+                            {users.filter(user => user.role !== 'admin').map(user => {
+                                const totalHours = getUserTotalHours(user.schedules || []);
+                                return (
+                                    <div key={user.id} className="glass-card rounded-xl p-3.5 border border-slate-700/50">
+                                        <div className="flex items-center justify-between mb-2.5">
+                                            <span className="font-bold text-sm text-white flex items-center gap-1.5">
+                                                <span className={`w-2 h-2 rounded-full ${user.color}`} />
+                                                {user.username}
+                                            </span>
+                                            <span className="text-[11px] text-slate-400 font-medium">{totalHours.toFixed(1)}h/sem</span>
+                                        </div>
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {weekDates.map(date => {
+                                                const dateStr = toLocalDateStr(date);
+                                                const userSchedule = schedules.find(s => s.user.id === user.id && s.date === dateStr);
+                                                const dayLabel = date.toLocaleDateString('es-ES', { weekday: 'short' }).replace('.', '');
+                                                const canEdit = currentUser.role === 'admin' || currentUser.role === 'manager';
+
+                                                if (userSchedule) {
+                                                    return (
+                                                        <span
+                                                            key={dateStr}
+                                                            className={`text-[10px] font-bold px-2 py-1.5 rounded-md text-white flex items-center gap-1.5 ${user.color}`}
+                                                        >
+                                                            {dayLabel} {userSchedule.start_time}-{userSchedule.end_time}
+                                                            {canEdit && (
+                                                                <button onClick={() => handleDeleteSchedule(userSchedule.id)} className="hover:opacity-70">
+                                                                    <X className="w-3 h-3" />
+                                                                </button>
+                                                            )}
+                                                        </span>
+                                                    );
+                                                }
+
+                                                return (
+                                                    <button
+                                                        key={dateStr}
+                                                        disabled={!canEdit}
+                                                        onClick={() => {
+                                                            if (!canEdit) return;
+                                                            setSelectedUserForSchedule(user);
+                                                            setNewSchedule({
+                                                                date: dateStr,
+                                                                start_time: user.default_start_time || '09:00',
+                                                                end_time: user.default_end_time || '18:00'
+                                                            });
+                                                        }}
+                                                        className="text-[10px] font-medium px-2 py-1.5 rounded-md border border-dashed border-slate-700 text-slate-500 disabled:opacity-40"
+                                                    >
+                                                        {dayLabel} +
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {/* Desktop / tablet: full grid */}
+                        <div className="hidden sm:block overflow-x-auto">
+                        <div className="min-w-[800px]">
                         {/* Grid Header */}
                         <div className="grid grid-cols-8 gap-1 mb-2">
                             <div className="p-2 text-xs font-bold text-slate-500 uppercase">Usuario</div>
@@ -301,7 +365,9 @@ export default function ScheduleManager({ currentUser }: { currentUser: any }) {
                                 </div>
                             ))}
                         </div>
-                    </div>
+                        </div>
+                        </div>
+                    </>
                 ) : (
                     <MonthlyScheduleView schedules={schedules} />
                 )}

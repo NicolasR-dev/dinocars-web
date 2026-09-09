@@ -152,17 +152,20 @@ export default function Dashboard() {
 
   if (!user) return null;
 
-  const isAdminOrManager = user.role === 'admin' || user.role === 'manager';
+  const isAdmin = user.role === 'admin';
   const isOwner = user.role === 'owner';
+  // manager tiene la misma vista de horario que worker (solo lectura), sin pestaña de Usuarios
+  // ni acceso a la gestión técnica de horarios — eso queda exclusivo para admin.
 
   const visibleTabs = TABS
     .filter(tab => {
       if (isOwner) return tab.id === 'history' || tab.id === 'stats';
       if (tab.id === 'stats') return false; // admin ya accede a esto desde el toggle interno en Usuarios
-      return tab.id !== 'schedule' || isAdminOrManager;
+      if (tab.id === 'schedule') return isAdmin;
+      return true;
     })
     .map(tab => {
-      if (tab.id === 'users' && !isAdminOrManager) {
+      if (tab.id === 'users' && !isAdmin) {
         return { ...tab, label: 'Horarios' };
       }
       return tab;
@@ -334,10 +337,10 @@ export default function Dashboard() {
               </section>
             )}
 
-            {/* ── Usuarios / Horarios (worker) ── */}
+            {/* ── Usuarios (admin) / Horarios (manager y worker) ── */}
             {activeTab === 'users' && (
               <section className="glass-card p-5 sm:p-6 rounded-2xl">
-                {isAdminOrManager ? (
+                {isAdmin ? (
                   <UserManagement currentUser={user} />
                 ) : (
                   <WorkerSchedule currentUser={user} />
@@ -345,8 +348,8 @@ export default function Dashboard() {
               </section>
             )}
 
-            {/* ── Horarios (admin/manager) ── */}
-            {activeTab === 'schedule' && isAdminOrManager && (
+            {/* ── Horarios (admin) ── */}
+            {activeTab === 'schedule' && isAdmin && (
               <section className="glass-card p-5 sm:p-6 rounded-2xl">
                 <ScheduleManager currentUser={user} />
               </section>
