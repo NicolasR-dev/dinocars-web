@@ -23,7 +23,7 @@ BELSY = {
 JOSEFA = {
     "Wednesday": _shift("13:00", "20:00"),
     "Saturday": _shift("10:00", "17:30"),
-    "Sunday": _shift("13:00", "20:00"),
+    "Sunday": _shift("12:30", "20:00"),
 }
 
 PATTERN_E = {

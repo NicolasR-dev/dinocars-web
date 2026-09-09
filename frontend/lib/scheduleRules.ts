@@ -39,7 +39,7 @@ const BELSY: WeekSchedule = {
 const JOSEFA: WeekSchedule = {
     Wednesday: shift('13:00', '20:00'),
     Saturday: shift('10:00', '17:30'),
-    Sunday: shift('13:00', '20:00'),
+    Sunday: shift('12:30', '20:00'),
 };
 
 // ── Par rotativo: Eloisa <-> Taahirah intercambian su patrón cada semana ────
