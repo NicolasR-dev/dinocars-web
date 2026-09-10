@@ -57,24 +57,28 @@ export default function CalcularVueltas({ onComplete, userRole }: { onComplete: 
                     const counter = dinoCounters[idx];
                     return (
                         <div key={idx} className="space-y-2">
-                            <label className="text-sm text-slate-400 flex items-baseline gap-1.5">
-                                {counter?.name || `Dino ${idx + 1}`}
-                                {counter && (
-                                    <span className="text-[10px] text-slate-500 font-mono">(va en {counter.thousands}.000+)</span>
-                                )}
-                            </label>
-                            <input
-                                type="number"
-                                min={0}
-                                max={999}
-                                value={val || ''}
-                                onChange={(e) => {
-                                    const newDinos = [...dinos];
-                                    newDinos[idx] = parseInt(e.target.value) || 0;
-                                    setDinos(newDinos);
-                                }}
-                                className="input-premium w-full text-center text-xl font-mono text-white"
-                            />
+                            <label className="text-sm text-slate-400">{counter?.name || `Dino ${idx + 1}`}</label>
+                            <div className="flex rounded-lg overflow-hidden border border-slate-700 bg-slate-900/50 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-transparent transition-all duration-200">
+                                <div
+                                    title="Miles acumulados (fijo, no se edita)"
+                                    className="flex items-center justify-center px-2.5 bg-slate-800 text-slate-300 font-mono text-lg font-bold border-r border-slate-700 shrink-0"
+                                >
+                                    {counter ? `${counter.thousands}.` : '—'}
+                                </div>
+                                <input
+                                    type="number"
+                                    min={0}
+                                    max={999}
+                                    placeholder="000"
+                                    value={val || ''}
+                                    onChange={(e) => {
+                                        const newDinos = [...dinos];
+                                        newDinos[idx] = parseInt(e.target.value) || 0;
+                                        setDinos(newDinos);
+                                    }}
+                                    className="flex-1 min-w-0 bg-transparent px-3 py-3 text-center text-xl font-mono text-white outline-none"
+                                />
+                            </div>
                         </div>
                     );
                 })}
