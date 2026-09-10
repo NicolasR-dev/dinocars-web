@@ -118,6 +118,19 @@ class PushSubscriptionCreate(BaseModel):
     keys: PushSubscriptionKeys
 
 
+class DinoCounterOut(BaseModel):
+    id: int
+    name: str
+    thousands: int
+
+    class Config:
+        orm_mode = True
+
+
+class DinoResolveRequest(BaseModel):
+    raw_counts: List[int]  # lecturas de 3 dígitos, mismo orden que GET /dino-counters
+
+
 class BulkScheduleCreate(BaseModel):
     user_id: int
     start_date: str # YYYY-MM-DD

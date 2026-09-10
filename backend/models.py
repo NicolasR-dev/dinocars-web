@@ -73,3 +73,16 @@ class PushSubscription(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User")
+
+
+class DinoCounter(Base):
+    """Cada dino tiene un contador físico que solo muestra 3 dígitos y se
+    reinicia a 0 al pasar de 999. 'thousands' guarda cuántos miles ya lleva
+    acumulados ese dino, y 'last_raw' la última lectura de 3 dígitos que
+    se registró, para poder detectar automáticamente el siguiente reinicio."""
+    __tablename__ = "dino_counters"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True)
+    thousands = Column(Integer, default=0)
+    last_raw = Column(Integer, nullable=True)

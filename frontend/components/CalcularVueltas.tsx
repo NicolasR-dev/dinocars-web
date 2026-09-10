@@ -1,34 +1,47 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import api from '@/lib/api';
 import { motion } from 'framer-motion';
 import { Calculator, Save } from 'lucide-react';
 
 export default function CalcularVueltas({ onComplete, userRole }: { onComplete: (data: any) => void; userRole?: string }) {
+    // Lo que se escribe acá son las 3 cifras que se ven en el contador físico de cada dino
+    // (se reinicia a 0 al pasar de 999). El backend recuerda cuántos miles lleva cada uno
+    // y reconstruye el número real — nadie tiene que hacer esa cuenta a mano.
     const [dinos, setDinos] = useState<number[]>([0, 0, 0, 0, 0, 0]);
+    const [dinoNames, setDinoNames] = useState<string[]>([]);
     const [result, setResult] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const isAdmin = userRole === 'admin';
 
+    useEffect(() => {
+        api.get('/dino-counters')
+            .then(res => setDinoNames(res.data.map((c: any) => c.name)))
+            .catch(() => { });
+    }, []);
+
     const handleCalculate = async () => {
         setLoading(true);
         try {
+            const resolveRes = await api.post('/dino-counters/resolve', { raw_counts: dinos });
+            const fullCounts: number[] = resolveRes.data.dino_counts;
+
             const lastRecordRes = await api.get('/last-record');
             const prevTotal = lastRecordRes.data.total_accumulated_today || 0;
 
             const res = await api.post('/calculate-vueltas', {
-                dino_counts: dinos,
+                dino_counts: fullCounts,
                 total_accumulated_prev: prevTotal
             });
 
             if (isAdmin) {
                 setResult(res.data);
             }
-            
+
             // Still call onComplete but maybe after a short delay or directly
             // If it's a worker, we want to move them to the next tab without showing the green box.
-            onComplete({ ...res.data, dinos });
+            onComplete({ ...res.data, dinos: fullCounts });
         } catch (error) {
             console.error(error);
             alert('Error al calcular');
@@ -42,9 +55,11 @@ export default function CalcularVueltas({ onComplete, userRole }: { onComplete: 
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {dinos.map((val, idx) => (
                     <div key={idx} className="space-y-2">
-                        <label className="text-sm text-slate-400">Dino {idx + 1}</label>
+                        <label className="text-sm text-slate-400">{dinoNames[idx] || `Dino ${idx + 1}`}</label>
                         <input
                             type="number"
+                            min={0}
+                            max={999}
                             value={val || ''}
                             onChange={(e) => {
                                 const newDinos = [...dinos];

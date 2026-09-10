@@ -95,6 +95,22 @@ def startup_event():
             db.add(admin_user)
             db.commit()
             print("Admin user seeded successfully.")
+
+        # Seed the 6 dino counters (only once — their 'thousands' is manual state after that)
+        if db.query(models.DinoCounter).count() == 0:
+            print("Seeding dino counters...")
+            initial_counters = [
+                ("Naranjo Verde", 4),
+                ("Rosado", 5),
+                ("Amarillo Rosa", 4),
+                ("Azul", 4),
+                ("Alien Verde", 4),
+                ("Verde Amarillo", 4),
+            ]
+            for name, thousands in initial_counters:
+                db.add(models.DinoCounter(name=name, thousands=thousands, last_raw=None))
+            db.commit()
+            print("Dino counters seeded successfully.")
     except Exception as e:
         print(f"Error seeding admin/migrating: {e}")
     finally:
@@ -234,6 +250,33 @@ def calculate_vueltas(request: schemas.VueltasCalculationRequest):
     total_today = sum(request.dino_counts)
     rides_today = total_today - request.total_accumulated_prev
     return {"total_today": total_today, "rides_today": rides_today}
+
+@app.get("/dino-counters", response_model=List[schemas.DinoCounterOut])
+def get_dino_counters(db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
+    return db.query(models.DinoCounter).order_by(models.DinoCounter.id).all()
+
+@app.post("/dino-counters/resolve")
+def resolve_dino_counters(
+    request: schemas.DinoResolveRequest,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+):
+    """Recibe las lecturas de 3 dígitos que se ven en cada contador físico y las
+    convierte al número real acumulado, detectando y aplicando automáticamente
+    el siguiente reinicio (cuando la lectura nueva es menor que la anterior)."""
+    counters = db.query(models.DinoCounter).order_by(models.DinoCounter.id).all()
+    if len(request.raw_counts) != len(counters):
+        raise HTTPException(status_code=400, detail=f"Se esperaban {len(counters)} lecturas, llegaron {len(request.raw_counts)}")
+
+    full_counts = []
+    for counter, raw in zip(counters, request.raw_counts):
+        if counter.last_raw is not None and raw < counter.last_raw:
+            counter.thousands += 1
+        counter.last_raw = raw
+        full_counts.append(counter.thousands * 1000 + raw)
+
+    db.commit()
+    return {"dino_counts": full_counts}
 
 @app.get("/last-record", response_model=schemas.DailyRecord)
 def get_last_record(db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
