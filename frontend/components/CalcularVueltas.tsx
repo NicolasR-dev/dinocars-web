@@ -10,14 +10,14 @@ export default function CalcularVueltas({ onComplete, userRole }: { onComplete: 
     // (se reinicia a 0 al pasar de 999). El backend recuerda cuántos miles lleva cada uno
     // y reconstruye el número real — nadie tiene que hacer esa cuenta a mano.
     const [dinos, setDinos] = useState<number[]>([0, 0, 0, 0, 0, 0]);
-    const [dinoNames, setDinoNames] = useState<string[]>([]);
+    const [dinoCounters, setDinoCounters] = useState<{ name: string; thousands: number }[]>([]);
     const [result, setResult] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const isAdmin = userRole === 'admin';
 
     useEffect(() => {
         api.get('/dino-counters')
-            .then(res => setDinoNames(res.data.map((c: any) => c.name)))
+            .then(res => setDinoCounters(res.data.map((c: any) => ({ name: c.name, thousands: c.thousands }))))
             .catch(() => { });
     }, []);
 
@@ -53,23 +53,31 @@ export default function CalcularVueltas({ onComplete, userRole }: { onComplete: 
     return (
         <div className="space-y-6">
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {dinos.map((val, idx) => (
-                    <div key={idx} className="space-y-2">
-                        <label className="text-sm text-slate-400">{dinoNames[idx] || `Dino ${idx + 1}`}</label>
-                        <input
-                            type="number"
-                            min={0}
-                            max={999}
-                            value={val || ''}
-                            onChange={(e) => {
-                                const newDinos = [...dinos];
-                                newDinos[idx] = parseInt(e.target.value) || 0;
-                                setDinos(newDinos);
-                            }}
-                            className="input-premium w-full text-center text-xl font-mono text-white"
-                        />
-                    </div>
-                ))}
+                {dinos.map((val, idx) => {
+                    const counter = dinoCounters[idx];
+                    return (
+                        <div key={idx} className="space-y-2">
+                            <label className="text-sm text-slate-400 flex items-baseline gap-1.5">
+                                {counter?.name || `Dino ${idx + 1}`}
+                                {counter && (
+                                    <span className="text-[10px] text-slate-500 font-mono">(va en {counter.thousands}.000+)</span>
+                                )}
+                            </label>
+                            <input
+                                type="number"
+                                min={0}
+                                max={999}
+                                value={val || ''}
+                                onChange={(e) => {
+                                    const newDinos = [...dinos];
+                                    newDinos[idx] = parseInt(e.target.value) || 0;
+                                    setDinos(newDinos);
+                                }}
+                                className="input-premium w-full text-center text-xl font-mono text-white"
+                            />
+                        </div>
+                    );
+                })}
             </div>
 
             <button
