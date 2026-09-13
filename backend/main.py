@@ -278,6 +278,23 @@ def resolve_dino_counters(
     db.commit()
     return {"dino_counts": full_counts}
 
+@app.put("/dino-counters/{counter_id}", response_model=schemas.DinoCounterOut)
+def update_dino_counter(
+    counter_id: int,
+    update: schemas.DinoCounterUpdate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_active_admin),
+):
+    """Corrige manualmente en cuántos miles va un dino (por ejemplo, tras un
+    error de tipeo que disparó un reinicio falso)."""
+    counter = db.query(models.DinoCounter).filter(models.DinoCounter.id == counter_id).first()
+    if not counter:
+        raise HTTPException(status_code=404, detail="Contador no encontrado")
+    counter.thousands = update.thousands
+    db.commit()
+    db.refresh(counter)
+    return counter
+
 @app.get("/last-record", response_model=schemas.DailyRecord)
 def get_last_record(db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
     # Get the most recent record to find the previous accumulated total

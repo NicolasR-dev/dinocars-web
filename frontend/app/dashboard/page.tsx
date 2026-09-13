@@ -90,9 +90,11 @@ export default function Dashboard() {
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [calculatedRides, setCalculatedRides] = useState<number | undefined>(undefined);
+  const [calculatedDinos, setCalculatedDinos] = useState<number[] | undefined>(undefined);
 
   const handleCalculationComplete = (data: any) => {
     setCalculatedRides(data.rides_today);
+    setCalculatedDinos(data.dinos);
     setActiveTab('caja');
   };
 
@@ -242,7 +244,7 @@ export default function Dashboard() {
                   <DollarSign className="text-emerald-400 w-5 h-5" />
                   Cierre de Caja
                 </h2>
-                <CuadrarCaja initialRides={calculatedRides} currentUser={user} />
+                <CuadrarCaja initialRides={calculatedRides} initialDinos={calculatedDinos} currentUser={user} />
               </section>
             )}
 

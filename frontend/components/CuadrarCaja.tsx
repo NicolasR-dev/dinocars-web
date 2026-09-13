@@ -186,6 +186,20 @@ export default function CuadrarCaja({ initialRides, initialDinos, currentUser }:
                 efectivo_diario_generado,
             };
 
+            // Recién acá, al confirmar el cierre de verdad, se resuelven y se guardan
+            // los contadores de los dinos (con su detección de reinicio). Si esto se
+            // hiciera antes (por ejemplo al solo calcular vueltas), un error de tipeo
+            // que nunca se llega a guardar igual dejaría el contador mal.
+            let dinoCountsJson: string | null = null;
+            if (initialDinos && initialDinos.length > 0) {
+                try {
+                    const resolveRes = await api.post('/dino-counters/resolve', { raw_counts: initialDinos });
+                    dinoCountsJson = JSON.stringify(resolveRes.data.dino_counts);
+                } catch (e) {
+                    console.error('Error resolviendo contadores de dinos', e);
+                }
+            }
+
             // Save to DB
             await api.post('/records/', {
                 date: formData.date,
@@ -205,7 +219,7 @@ export default function CuadrarCaja({ initialRides, initialDinos, currentUser }:
                 toys_sold_details: formData.juguetes_detalles,
                 toys_sold_total: formData.juguetes_vendidos_total,
                 worker_name: formData.worker_name,
-                dino_counts: initialDinos ? JSON.stringify(initialDinos) : null
+                dino_counts: dinoCountsJson
             });
             setCalculation(calcResult);
             setHasSaved(true);

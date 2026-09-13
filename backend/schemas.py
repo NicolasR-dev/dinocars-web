@@ -127,6 +127,10 @@ class DinoCounterOut(BaseModel):
         orm_mode = True
 
 
+class DinoCounterUpdate(BaseModel):
+    thousands: int
+
+
 class DinoResolveRequest(BaseModel):
     raw_counts: List[int]  # lecturas de 3 dígitos, mismo orden que GET /dino-counters
 
