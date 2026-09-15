@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Bell, BellOff, BellRing, Send } from 'lucide-react';
+import { Bell, BellOff, BellRing, Send, Users, X } from 'lucide-react';
 import api from '@/lib/api';
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
@@ -21,6 +21,8 @@ export default function PushNotifications({ isAdmin }: { isAdmin?: boolean }) {
     const [status, setStatus] = useState<Status>('checking');
     const [busy, setBusy] = useState(false);
     const [testing, setTesting] = useState(false);
+    const [subs, setSubs] = useState<any[] | null>(null);
+    const [loadingSubs, setLoadingSubs] = useState(false);
 
     useEffect(() => {
         const check = async () => {
@@ -120,6 +122,21 @@ export default function PushNotifications({ isAdmin }: { isAdmin?: boolean }) {
         }
     };
 
+    const handleShowSubs = async () => {
+        setLoadingSubs(true);
+        setSubs([]);
+        try {
+            const { data } = await api.get('/push/subscriptions');
+            setSubs(data);
+        } catch (e) {
+            console.error(e);
+            alert('No se pudo cargar la lista de suscriptores.');
+            setSubs(null);
+        } finally {
+            setLoadingSubs(false);
+        }
+    };
+
     if (status === 'unsupported' || status === 'checking') return null;
 
     if (status === 'denied') {
@@ -155,6 +172,56 @@ export default function PushNotifications({ isAdmin }: { isAdmin?: boolean }) {
                     <Send className="w-3.5 h-3.5" />
                     <span className="hidden sm:inline">Probar ahora</span>
                 </button>
+            )}
+
+            {isAdmin && (
+                <button
+                    onClick={handleShowSubs}
+                    title="Ver quién tiene notificaciones activas ahora mismo"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 transition-colors"
+                >
+                    <Users className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Ver suscritos</span>
+                </button>
+            )}
+
+            {subs !== null && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setSubs(null)}>
+                    <div
+                        onClick={(e) => e.stopPropagation()}
+                        className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md p-5 shadow-2xl max-h-[80vh] overflow-y-auto"
+                    >
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                                <Users className="w-4 h-4 text-cyan-400" />
+                                Notificaciones activas
+                            </h3>
+                            <button onClick={() => setSubs(null)} className="p-1 hover:bg-white/10 rounded-full">
+                                <X className="w-4 h-4 text-slate-400" />
+                            </button>
+                        </div>
+
+                        {loadingSubs ? (
+                            <p className="text-sm text-slate-500 text-center py-6">Cargando...</p>
+                        ) : subs.length === 0 ? (
+                            <p className="text-sm text-slate-500 text-center py-6">Nadie tiene notificaciones activas ahora mismo.</p>
+                        ) : (
+                            <div className="space-y-2">
+                                {subs.map((s, i) => (
+                                    <div key={i} className="flex justify-between items-center bg-slate-800/50 rounded-lg px-3 py-2 text-sm">
+                                        <div>
+                                            <p className="font-medium text-white">{s.username}</p>
+                                            <p className="text-[10px] text-slate-500 uppercase">{s.role} · {s.device}</p>
+                                        </div>
+                                        <p className="text-[10px] text-slate-500">
+                                            {new Date(s.created_at).toLocaleDateString('es-CL', { day: 'numeric', month: 'short' })}
+                                        </p>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
             )}
         </div>
     );
