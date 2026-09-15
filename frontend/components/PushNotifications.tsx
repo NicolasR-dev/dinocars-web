@@ -35,6 +35,16 @@ export default function PushNotifications({ isAdmin }: { isAdmin?: boolean }) {
             try {
                 const reg = await navigator.serviceWorker.register('/sw.js');
                 const existing = await reg.pushManager.getSubscription();
+                if (existing) {
+                    // El navegador ya tiene una suscripción activa, pero el servidor pudo
+                    // haberla olvidado (se podó por un error, se reinició la base, etc.).
+                    // La reenviamos siempre al abrir la app para que se mantenga sincronizada sola.
+                    const json = existing.toJSON();
+                    api.post('/push/subscribe', {
+                        endpoint: json.endpoint,
+                        keys: { p256dh: json.keys?.p256dh, auth: json.keys?.auth },
+                    }).catch(() => { });
+                }
                 setStatus(existing ? 'on' : 'off');
             } catch {
                 setStatus('off');

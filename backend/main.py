@@ -579,6 +579,35 @@ def unsubscribe_push(
     db.commit()
     return {"ok": True}
 
+@app.get("/push/subscriptions")
+def list_push_subscriptions(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_active_admin),
+):
+    """Diagnóstico: quién tiene una suscripción push registrada ahora mismo en el servidor
+    (sin exponer las claves de la suscripción, que son sensibles)."""
+    from urllib.parse import urlparse
+
+    subs = db.query(models.PushSubscription).join(models.User).all()
+    result = []
+    for s in subs:
+        host = urlparse(s.endpoint).hostname or ""
+        if "apple.com" in host:
+            device = "iOS/Safari"
+        elif "googleapis.com" in host or "google.com" in host:
+            device = "Android/Chrome"
+        elif "mozilla.com" in host:
+            device = "Firefox"
+        else:
+            device = host
+        result.append({
+            "username": s.user.username,
+            "role": s.user.role,
+            "device": device,
+            "created_at": s.created_at,
+        })
+    return result
+
 @app.post("/push/test")
 def test_push_notifications(
     db: Session = Depends(get_db),
