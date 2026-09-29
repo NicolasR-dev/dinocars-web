@@ -1,5 +1,6 @@
 // Reglas fijas de horario del equipo DinoCars.
-// Belsy y Josefa tienen horario fijo. Eloisa y Taahirah rotan sus patrones cada semana.
+// Belsy, Josefa y Taahirah tienen horario fijo. Eloisa y Paz tienen el martes rotativo
+// (cada una con sus propios horarios, no intercambian turno entre ellas).
 
 export type ShiftType = 'apertura' | 'cierre' | 'completo';
 
@@ -42,26 +43,34 @@ const JOSEFA: WeekSchedule = {
     Sunday: shift('12:30', '20:00'),
 };
 
-// ── Par rotativo: Eloisa <-> Taahirah intercambian su patrón cada semana ────
-
-const PATTERN_E: WeekSchedule = {
-    Monday: shift('10:00', '14:00'),
-    Tuesday: shift('15:00', '20:00'),
+const TAAHIRAH: WeekSchedule = {
     Wednesday: shift('10:00', '14:00'),
-    Thursday: shift('15:00', '20:00'),
-    Friday: shift('10:00', '14:00'),
+    Saturday: shift('12:00', '20:00'),
+    Sunday: shift('10:00', '20:00'),
 };
 
-const PATTERN_T: WeekSchedule = {
-    Monday: shift('14:00', '20:00'),
-    Tuesday: shift('10:00', '15:00'),
-    Thursday: shift('10:00', '15:00'),
+// ── Eloisa y Paz: fijas de lunes a viernes, miércoles libre, martes rotativo ────
+
+const ELOISA_BASE: WeekSchedule = {
+    Monday: shift('10:00', '15:00'),
+    Thursday: shift('10:00', '16:00'),
+    Friday: shift('10:00', '16:00'),
+};
+const ELOISA_TUE_A = shift('10:00', '15:00'); // "semana A"
+const ELOISA_TUE_B = shift('15:00', '20:00'); // "semana B"
+
+const PAZ_BASE: WeekSchedule = {
+    Monday: shift('15:00', '20:00'),
+    Thursday: shift('15:00', '20:00'),
     Friday: shift('14:00', '20:00'),
 };
+// Semana contraria a Eloisa: cuando Eloisa hace 10-15 (semana A), Paz hace 14-20.
+const PAZ_TUE_A = shift('14:00', '20:00');
+const PAZ_TUE_B = shift('10:00', '16:00');
 
-// Semana ancla: la semana que empieza el lunes 7 de septiembre de 2026,
-// donde Eloisa hace PATTERN_T y Taahirah hace PATTERN_E. A partir de ahí se alterna cada semana.
-const ANCHOR_MONDAY = new Date(2026, 8, 7);
+// Semana ancla: el lunes 28 de septiembre de 2026 es "semana B"
+// (Eloisa martes 15:00-20:00, Paz martes 10:00-16:00). Se alterna cada semana desde ahí.
+const ANCHOR_MONDAY = new Date(2026, 8, 28);
 
 export function getMonday(d: Date): Date {
     const date = new Date(d);
@@ -77,13 +86,14 @@ function weeksBetween(a: Date, b: Date): number {
     return Math.round(ms / (7 * 24 * 60 * 60 * 1000));
 }
 
-export type WorkerKey = 'belsy' | 'josefa' | 'eloisa' | 'taahirah';
+export type WorkerKey = 'belsy' | 'josefa' | 'eloisa' | 'taahirah' | 'paz';
 
 export const WORKER_INFO: Record<WorkerKey, { name: string; color: string }> = {
     belsy: { name: 'Belsy', color: 'bg-blue-500' },
     josefa: { name: 'Josefa', color: 'bg-pink-500' },
     eloisa: { name: 'Eloisa', color: 'bg-emerald-500' },
     taahirah: { name: 'Taahirah', color: 'bg-purple-500' },
+    paz: { name: 'Paz', color: 'bg-orange-500' },
 };
 
 export function normalizeName(s: string): string {
@@ -102,16 +112,15 @@ export function matchWorkerKey(username: string): WorkerKey | null {
 
 export function getWeekSchedule(monday: Date): Record<WorkerKey, WeekSchedule> {
     const diff = weeksBetween(ANCHOR_MONDAY, monday);
-    const parity = ((diff % 2) + 2) % 2; // 0 = misma paridad que la semana ancla
-
-    const eloisaPattern = parity === 0 ? PATTERN_T : PATTERN_E;
-    const taahirahPattern = parity === 0 ? PATTERN_E : PATTERN_T;
+    const parity = ((diff % 2) + 2) % 2; // 0 = misma paridad que la semana ancla (semana B)
+    const isWeekB = parity === 0;
 
     return {
         belsy: BELSY,
         josefa: JOSEFA,
-        eloisa: eloisaPattern,
-        taahirah: taahirahPattern,
+        taahirah: TAAHIRAH,
+        eloisa: { ...ELOISA_BASE, Tuesday: isWeekB ? ELOISA_TUE_B : ELOISA_TUE_A },
+        paz: { ...PAZ_BASE, Tuesday: isWeekB ? PAZ_TUE_B : PAZ_TUE_A },
     };
 }
 
