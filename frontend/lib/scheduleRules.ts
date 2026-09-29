@@ -1,5 +1,5 @@
 // Reglas fijas de horario del equipo DinoCars.
-// Belsy, Josefa y Taahirah tienen horario fijo. Eloisa y Paz tienen el martes rotativo
+// Josefa y Taahirah tienen horario fijo. Eloisa y Paz tienen el martes rotativo
 // (cada una con sus propios horarios, no intercambian turno entre ellas).
 
 export type ShiftType = 'apertura' | 'cierre' | 'completo';
@@ -31,11 +31,6 @@ function shift(start: string, end: string): Shift {
 }
 
 // ── Horarios fijos ──────────────────────────────────────────────────────────
-
-const BELSY: WeekSchedule = {
-    Saturday: shift('10:00', '20:00'),
-    Sunday: shift('10:00', '20:00'),
-};
 
 const JOSEFA: WeekSchedule = {
     Wednesday: shift('13:00', '20:00'),
@@ -86,10 +81,9 @@ function weeksBetween(a: Date, b: Date): number {
     return Math.round(ms / (7 * 24 * 60 * 60 * 1000));
 }
 
-export type WorkerKey = 'belsy' | 'josefa' | 'eloisa' | 'taahirah' | 'paz';
+export type WorkerKey = 'josefa' | 'eloisa' | 'taahirah' | 'paz';
 
 export const WORKER_INFO: Record<WorkerKey, { name: string; color: string }> = {
-    belsy: { name: 'Belsy', color: 'bg-blue-500' },
     josefa: { name: 'Josefa', color: 'bg-pink-500' },
     eloisa: { name: 'Eloisa', color: 'bg-emerald-500' },
     taahirah: { name: 'Taahirah', color: 'bg-purple-500' },
@@ -116,7 +110,6 @@ export function getWeekSchedule(monday: Date): Record<WorkerKey, WeekSchedule> {
     const isWeekB = parity === 0;
 
     return {
-        belsy: BELSY,
         josefa: JOSEFA,
         taahirah: TAAHIRAH,
         eloisa: { ...ELOISA_BASE, Tuesday: isWeekB ? ELOISA_TUE_B : ELOISA_TUE_A },

@@ -15,11 +15,6 @@ def _shift(start: str, end: str) -> dict:
     return {"start": start, "end": end, "type": shift_type}
 
 
-BELSY = {
-    "Saturday": _shift("10:00", "20:00"),
-    "Sunday": _shift("10:00", "20:00"),
-}
-
 JOSEFA = {
     "Wednesday": _shift("13:00", "20:00"),
     "Saturday": _shift("10:00", "17:30"),
@@ -54,7 +49,6 @@ PAZ_TUE_B = _shift("10:00", "16:00")
 ANCHOR_MONDAY = date(2026, 9, 28)
 
 WORKER_NAMES = {
-    "belsy": "Belsy",
     "josefa": "Josefa",
     "eloisa": "Eloisa",
     "taahirah": "Taahirah",
@@ -72,7 +66,6 @@ def get_week_schedule(monday: date) -> dict:
     is_week_b = parity == 0
 
     return {
-        "belsy": BELSY,
         "josefa": JOSEFA,
         "taahirah": TAAHIRAH,
         "eloisa": {**ELOISA_BASE, "Tuesday": ELOISA_TUE_B if is_week_b else ELOISA_TUE_A},
