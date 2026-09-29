@@ -10,6 +10,7 @@ openpyxl
 requests
 python-multipart
 psycopg2-binary
+psycopg[binary]
 gunicorn
 pywebpush
 apscheduler
