@@ -41,7 +41,7 @@ PAZ_BASE = {
     "Friday": _shift("14:00", "20:00"),
 }
 PAZ_TUE_A = _shift("15:00", "20:00")  # semana A: 22h totales
-PAZ_TUE_B = _shift("10:00", "16:00")  # semana B: 23h totales
+PAZ_TUE_B = _shift("10:00", "15:00")  # semana B: 22h totales
 
 # Semana ancla: el lunes 28 de septiembre de 2026 es "semana B"
 # (Eloisa martes 15:00-20:00, Paz martes 10:00-16:00). Se alterna cada semana desde ahí.

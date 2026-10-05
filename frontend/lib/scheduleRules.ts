@@ -60,7 +60,7 @@ const PAZ_BASE: WeekSchedule = {
     Friday: shift('14:00', '20:00'),
 };
 const PAZ_TUE_A = shift('15:00', '20:00'); // semana A: 22h totales
-const PAZ_TUE_B = shift('10:00', '16:00'); // semana B: 23h totales
+const PAZ_TUE_B = shift('10:00', '15:00'); // semana B: 22h totales
 
 // Semana ancla: el lunes 28 de septiembre de 2026 es "semana B"
 // (Eloisa martes 15:00-20:00, Paz martes 10:00-16:00). Se alterna cada semana desde ahí.
