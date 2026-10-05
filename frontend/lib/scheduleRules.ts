@@ -55,13 +55,12 @@ const ELOISA_TUE_A = shift('10:00', '15:00'); // "semana A"
 const ELOISA_TUE_B = shift('15:00', '20:00'); // "semana B"
 
 const PAZ_BASE: WeekSchedule = {
-    Monday: shift('15:00', '20:00'),
+    Monday: shift('14:00', '20:00'),
     Thursday: shift('15:00', '20:00'),
     Friday: shift('14:00', '20:00'),
 };
-// Semana contraria a Eloisa: cuando Eloisa hace 10-15 (semana A), Paz hace 14-20.
-const PAZ_TUE_A = shift('14:00', '20:00');
-const PAZ_TUE_B = shift('10:00', '16:00');
+const PAZ_TUE_A = shift('15:00', '20:00'); // semana A: 22h totales
+const PAZ_TUE_B = shift('10:00', '16:00'); // semana B: 23h totales
 
 // Semana ancla: el lunes 28 de septiembre de 2026 es "semana B"
 // (Eloisa martes 15:00-20:00, Paz martes 10:00-16:00). Se alterna cada semana desde ahí.
