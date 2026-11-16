@@ -12,6 +12,7 @@ export type SpecialEvent = {
     day: number;
     recurring: boolean; // true = se repite cada año; false = fecha puntual de este año
     year?: number; // solo para eventos no recurrentes
+    theme?: 'christmas'; // acento visual especial (colores/emojis navideños)
 };
 
 const WORKER_BIRTHDAYS: Record<WorkerKey, { month: number; day: number }> = {
@@ -32,13 +33,14 @@ export const SPECIAL_EVENTS: SpecialEvent[] = [
     })),
     {
         key: 'amigo-secreto',
-        title: 'Amigo Secreto',
-        subtitle: 'Sábado 19 de diciembre',
+        title: '🎄 Amigo Secreto 🎅',
+        subtitle: '¡Navidad! Sábado 19 de diciembre',
         icon: 'secretFriend' as const,
         month: 12,
         day: 19,
         recurring: false,
         year: 2026,
+        theme: 'christmas',
     },
     {
         key: 'aniversario',

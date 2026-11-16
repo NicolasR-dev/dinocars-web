@@ -75,6 +75,16 @@ class PushSubscription(Base):
     user = relationship("User")
 
 
+class AppFlag(Base):
+    """Marcas persistentes simples (key/value) para lógica que debe ocurrir una sola vez
+    o llevar cuenta de la última vez que corrió, sobreviviendo reinicios del servidor."""
+    __tablename__ = "app_flags"
+
+    key = Column(String, primary_key=True)
+    value = Column(String, nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow)
+
+
 class DinoCounter(Base):
     """Cada dino tiene un contador físico que solo muestra 3 dígitos y se
     reinicia a 0 al pasar de 999. 'thousands' guarda cuántos miles ya lleva

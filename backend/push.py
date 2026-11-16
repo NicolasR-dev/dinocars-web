@@ -7,7 +7,7 @@ from zoneinfo import ZoneInfo
 from pywebpush import webpush, WebPushException
 from sqlalchemy.orm import Session
 
-from . import models, schedule_rules
+from . import models, schedule_rules, special_events
 
 CHILE_TZ = ZoneInfo("America/Santiago")
 
@@ -116,6 +116,40 @@ def notify_cash_closed(db: Session, record, sample: bool = False):
         .filter(models.User.role.in_(["owner", "admin"]))
         .all()
     )
+    dead_ids = [sub.id for sub in subscriptions if not _send(sub, payload)]
+    _prune_dead_subscriptions(db, dead_ids)
+
+
+def notify_special_events_feature(db: Session):
+    """Aviso único: se agregó la sección de Eventos Especiales (cumpleaños, amigo secreto, aniversario)."""
+    payload = {
+        "title": "🎄 Nueva sección: Eventos Especiales",
+        "body": "Ya puedes ver los cumpleaños del equipo, el Amigo Secreto 🎅 y el aniversario DinoCars, con cuenta regresiva incluida.",
+        "tag": "special-events-feature",
+    }
+    subscriptions = db.query(models.PushSubscription).all()
+    dead_ids = [sub.id for sub in subscriptions if not _send(sub, payload)]
+    _prune_dead_subscriptions(db, dead_ids)
+
+
+def notify_special_events_countdown(db: Session):
+    """Recordatorio periódico de cuántos días faltan para el próximo evento especial."""
+    today = today_in_chile()
+    event, event_date, days_left = special_events.get_nearest_event(today)
+
+    if days_left <= 0:
+        body = f"¡Hoy es el gran día: {event['title']}! 🎉"
+    elif days_left == 1:
+        body = f"Queda 1 día para {event['title']} ({event_date.strftime('%d/%m')})."
+    else:
+        body = f"Quedan {days_left} días para {event['title']} ({event_date.strftime('%d/%m')})."
+
+    payload = {
+        "title": "🎁 DinoCars — Próximo evento especial",
+        "body": body,
+        "tag": "special-events-countdown",
+    }
+    subscriptions = db.query(models.PushSubscription).all()
     dead_ids = [sub.id for sub in subscriptions if not _send(sub, payload)]
     _prune_dead_subscriptions(db, dead_ids)
 

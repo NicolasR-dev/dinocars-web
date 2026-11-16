@@ -40,6 +40,29 @@ def run_notify_monthly_goal():
     finally:
         db.close()
 
+
+def run_notify_special_events_countdown():
+    """Corre todos los días, pero solo envía el push si ya pasaron >= 10 días desde el
+    último envío (guardado en app_flags, para no perder la cuenta entre reinicios)."""
+    db = database.SessionLocal()
+    try:
+        today = push.today_in_chile()
+        flag = db.query(models.AppFlag).filter(models.AppFlag.key == "special_events_countdown_last_sent").first()
+        last_sent = datetime.fromisoformat(flag.value).date() if flag and flag.value else None
+
+        if last_sent is None or (today - last_sent).days >= 10:
+            push.notify_special_events_countdown(db)
+            if flag:
+                flag.value = today.isoformat()
+                flag.updated_at = datetime.utcnow()
+            else:
+                db.add(models.AppFlag(key="special_events_countdown_last_sent", value=today.isoformat()))
+            db.commit()
+    except Exception as e:
+        print(f"Error sending special-events countdown notification: {e}")
+    finally:
+        db.close()
+
 # Auto-Seed Admin and Keep-Alive on Startup
 @app.on_event("startup")
 def startup_event():
@@ -111,6 +134,15 @@ def startup_event():
                 db.add(models.DinoCounter(name=name, thousands=thousands, last_raw=None))
             db.commit()
             print("Dino counters seeded successfully.")
+
+        # Aviso único (push): se agregó la sección de Eventos Especiales.
+        if not db.query(models.AppFlag).filter(models.AppFlag.key == "special_events_feature_announced").first():
+            try:
+                push.notify_special_events_feature(db)
+            except Exception as e:
+                print(f"Error sending special-events feature announcement: {e}")
+            db.add(models.AppFlag(key="special_events_feature_announced", value="1"))
+            db.commit()
     except Exception as e:
         print(f"Error seeding admin/migrating: {e}")
     finally:
@@ -151,8 +183,14 @@ def startup_event():
             id="notify_monthly_goal",
             replace_existing=True,
         )
+        scheduler.add_job(
+            run_notify_special_events_countdown,
+            CronTrigger(hour=11, minute=0, timezone="America/Santiago"),
+            id="notify_special_events_countdown",
+            replace_existing=True,
+        )
         scheduler.start()
-        print("Push notification scheduler started (22:00 turnos, 16:00 meta).")
+        print("Push notification scheduler started (22:00 turnos, 16:00 meta, 11:00 eventos especiales cada 10 días).")
 
 # CORS
 origins = [
@@ -618,6 +656,7 @@ def test_push_notifications(
 
     push.notify_tomorrow_shifts(db)
     push.notify_monthly_goal(db)
+    push.notify_special_events_countdown(db)
 
     sample_record = SimpleNamespace(daily_cash_generated=185000, rides_today=42)
     push.notify_cash_closed(db, sample_record, sample=True)
