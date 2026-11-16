@@ -13,6 +13,7 @@ import {
     WorkerKey,
     ShiftType,
 } from '@/lib/scheduleRules';
+import SpecialEvents from './SpecialEvents';
 
 const SHIFT_STYLE: Record<ShiftType, { label: string; icon: any; bg: string; border: string; text: string }> = {
     apertura: { label: 'Apertura', icon: Sunrise, bg: 'bg-emerald-500/15', border: 'border-emerald-500/40', text: 'text-emerald-300' },
@@ -88,6 +89,9 @@ export default function WorkerSchedule({ currentUser }: { currentUser: any }) {
                     </div>
                 </div>
             )}
+
+            {/* Eventos Especiales */}
+            <SpecialEvents />
 
             {/* Header */}
             <div className="space-y-3">

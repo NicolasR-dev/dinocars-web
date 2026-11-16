@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Calendar, Clock, X, ChevronLeft, ChevronRight, Wand2 } from 'lucide-react';
 import api from '@/lib/api';
 import MonthlyScheduleView from './MonthlyScheduleView';
+import SpecialEvents from './SpecialEvents';
 import { getWeekSchedule, matchWorkerKey, calcHours as calcFixedHours, WeekdayKey } from '@/lib/scheduleRules';
 
 const DAYS_ES = {
@@ -177,6 +178,11 @@ export default function ScheduleManager({ currentUser }: { currentUser: any }) {
                         Autoprogramar
                     </button>
                 )}
+            </div>
+
+            {/* Eventos Especiales */}
+            <div className="glass p-4 sm:p-6 rounded-xl border border-slate-700">
+                <SpecialEvents />
             </div>
 
             {/* Global Visual Schedule */}
